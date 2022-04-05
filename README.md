@@ -1,2 +1,2 @@
 # OmicsDB
-Columnar Storage for BAM/CRAM files
+Performant Columnar Storage for BAM/CRAM files in C++
