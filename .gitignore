@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+#python
+*.pyc
+
+#emacs
+*~
+\#*\#
+.\#*
+TAGS
+
+#Xcode
+.DS_Store

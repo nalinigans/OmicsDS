@@ -1,2 +1,4 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # OmicsDB
-Performant Columnar Storage for BAM/CRAM files in C++
+**Experimental** Performant Columnar Storage and Retrieval of BAM/CRAM files in C++
