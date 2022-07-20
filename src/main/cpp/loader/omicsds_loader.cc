@@ -29,7 +29,7 @@
 
 std::vector<std::string> split(std::string str, std::string sep) {
   std::vector<std::string> retval;
-  int index;
+  size_t index;
 
   if(str.length() >= 2) {
     if(str[0] == '[') {
@@ -50,7 +50,7 @@ bool FileUtility::generalized_getline(std::string& retval) {
   retval = "";
 
   while(chars_read < file_size || str_buffer.size()) {
-    int idx = str_buffer.find('\n');
+    size_t idx = str_buffer.find('\n');
     if(idx != std::string::npos) {
       retval = retval + str_buffer.substr(0, idx); // exclude newline
       str_buffer.erase(0, idx + 1); // erase newline
@@ -137,7 +137,7 @@ void read_sam_file(std::string filename) {
 
     char *qseq = (char *)malloc(len);
     
-    for(int i=0; i<len; i++){
+    for(size_t i=0; i<len; i++){
       qseq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
     }
     
@@ -435,7 +435,7 @@ std::vector<OmicsCell> SamReader::get_next_cells() {
     int32_t tlen = m_align->core.isize;
     std::vector<char> qseq(len);
 
-    for(int i=0; i< len ; i++){
+    for(size_t i=0; i< len ; i++){
       qseq[i] = seq_nt16_str[bam_seqi(q,i)]; //gets nucleotide id and converts them into IUPAC id.
     }
 
@@ -601,7 +601,7 @@ bool MatrixReader::parse_next(std::string& sample, std::string& gene, float& sco
     m_current_token = toks[0];
 
     try {
-      for(int i = 0; i < m_columns.size(); i++) {
+      for(size_t i = 0; i < m_columns.size(); i++) {
         m_row_scores[i] = std::stof(toks[i + 1]);
       }
     }
@@ -827,7 +827,7 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
     auto& data = fiter->data;
 
     int length = aiter->second.length;
-    int size = aiter->second.element_size();
+    size_t size = aiter->second.element_size();
     if(length == TILEDB_VAR_NUM) { // variable length
       OmicsFieldData::push_back<size_t>(offset_buffers[i], attribute_offsets[i]);
       attribute_offsets[i] += data.size();
@@ -836,7 +836,8 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
       }
     }
     else {
-      assert(data.size() == size * length);
+      assert(length >= 0); // Should only be negative if variable
+      assert(data.size() == size * (size_t) length);
       for(auto& c : data) {
         offset_buffers[i].push_back(c);
       }
