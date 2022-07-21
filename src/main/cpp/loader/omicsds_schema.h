@@ -322,11 +322,14 @@ struct OmicsFieldData {
     return (T*)data.data();
   }
   template<class T>
-  T get(int idx = 0) const { // FIXME check bounds?
+  T get(size_t idx = 0) const {
+    if(!(idx < typed_size<T>())) {
+      throw std::out_of_range("Index out of range.");
+    }
     return ((T*)data.data())[idx];
   }
   template<class T>
-  int typed_size() const {
+  size_t typed_size() const {
     return data.size() / sizeof(T);
   }
 };
