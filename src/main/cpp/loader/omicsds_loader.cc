@@ -55,52 +55,6 @@ std::vector<std::string> split(std::string str, std::string sep) {
   return retval;
 }
 
-bool FileUtility::generalized_getline(std::string& retval) {
-  retval = "";
-
-  while(chars_read < file_size || str_buffer.size()) {
-    size_t idx = str_buffer.find('\n');
-    if(idx != std::string::npos) {
-      retval = retval + str_buffer.substr(0, idx); // exclude newline
-      str_buffer.erase(0, idx + 1); // erase newline
-      return true;
-    }
-
-    retval = retval + str_buffer;
-    str_buffer.clear();
-
-    int chars_to_read = std::min<ssize_t>(buffer_size, file_size - chars_read);
-
-    if(chars_to_read) {
-      TileDBUtils::read_file(filename, chars_read, buffer, chars_to_read);
-      chars_read += chars_to_read;
-    }
-
-    str_buffer.insert(str_buffer.end(), buffer, buffer + chars_to_read);
-  }
-  // Last line of the file may be lacking a newline
-  return retval != "";
-}
-
-int FileUtility::read_file(void* buffer, size_t chars_to_read) {
-  size_t buf_position = 0;
-  if(str_buffer.size() > 0) {
-    buf_position = read_from_str_buffer(buffer, chars_to_read);
-    chars_to_read -= buf_position;
-  }
-  int rcode = TileDBUtils::read_file(filename, chars_read, (char*)buffer + buf_position, chars_to_read);
-  chars_read += chars_to_read;
-  CHECK_RC(rcode);
-  return rcode;
-}
-
-size_t FileUtility::read_from_str_buffer(void* buffer, size_t chars_to_read) {
-  size_t readable_chars = std::min<size_t>(str_buffer.size(), chars_to_read);
-  memcpy(buffer, str_buffer.c_str(), readable_chars);
-  str_buffer.erase(0, readable_chars);
-  return readable_chars;
-}
-
 void read_sam_file(std::string filename) {
   std::cerr << "SAM file is " << filename << std::endl;
 

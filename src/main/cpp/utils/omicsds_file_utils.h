@@ -28,3 +28,35 @@
 #define SLASHIFY(path) (path.back()!='/'?path+'/':path)
 #define UNSLASHIFY(path) (path.back()=='/'?path.substr(0,path.length()-2):path)
 
+// for reading/writing local/cloud files using TileDBUtils api
+struct FileUtility {
+  // only need to construct for reading, write functionality is static
+  FileUtility(const std::string& filename, size_t buffer_size = 512);
+  ~FileUtility();
+
+  std::string filename;
+  size_t file_size = 0;
+  size_t chars_read = 0;
+  size_t buffer_size;
+  char* buffer;
+  std::string str_buffer;
+
+  // returns true if line was read
+  // provides similar functionality to std::getline but also supports cloud files
+  bool generalized_getline(std::string& retval);
+  // read specified number of bytes from file, 
+  // should work with generalized_getline but not tested
+  // returns tiledb return code
+  int read_file(void* buffer, size_t chars_to_read);
+
+  // write string to file
+  // returns tiledb return code
+  static int write_file(std::string filename, const std::string& str, const bool overwrite=false);
+
+  // write buffer to file
+  // returns tiledb return code
+  static int write_file(std::string filename, const void* buffer, size_t length, const bool overwrite=false);
+
+private:
+  size_t read_from_str_buffer(void* buffer, size_t chars_to_read);
+};

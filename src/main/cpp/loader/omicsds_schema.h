@@ -38,6 +38,8 @@
 #include "tiledb_constants.h"
 #include "tiledb_utils.h"
 
+#include "omicsds_file_utils.h"
+
 #define CHECK_RC(...)                                      \
 do {                                                       \
   int rc = __VA_ARGS__;                                    \
@@ -47,55 +49,6 @@ do {                                                       \
     return rc;                                             \
   }                                                        \
 } while (false)
-
-// for reading/writing local/cloud files using TileDBUtils api
-struct FileUtility {
-  // only need to construct for reading, write functionality is static
-  FileUtility(const std::string& filename): filename(filename) {
-    if(!TileDBUtils::is_file(filename)) {
-      std::cerr << "Note: file " << filename << " does not exist" << std::endl;
-    }
-    buffer = new char[buffer_size];
-    file_size = TileDBUtils::file_size(filename);
-    //      m_file_size = 0;
-  }
-  ~FileUtility() {
-    delete[] buffer;
-  }
-
-  std::string filename;
-  ssize_t file_size = 0;
-  ssize_t chars_read = 0;
-  const int buffer_size = 512;
-  char* buffer;
-  std::string str_buffer;
-
-  // returns true if line was read
-  // provides similar functionality to std::getline but also supports cloud files
-  bool generalized_getline(std::string& retval);
-  // read specified number of bytes from file, 
-  // should work with generalized_getline but not tested
-  // returns tiledb return code
-  int read_file(void* buffer, size_t chars_to_read);
-
-  // write string to file
-  // returns tiledb return code
-  static int write_file(std::string filename, const std::string& str, const bool overwrite=false) {
-    auto rcode = TileDBUtils::write_file(filename, str.c_str(), str.size(), overwrite);
-    CHECK_RC(rcode);
-    return rcode;
-  }
-  // write buffer to file
-  // returns tiledb return code
-  static int write_file(std::string filename, const void* buffer, size_t length, const bool overwrite=false) {
-    auto rcode = TileDBUtils::write_file(filename, buffer, length, overwrite);
-    CHECK_RC(rcode);
-    return rcode;
-  }
-
-private:
-  size_t read_from_str_buffer(void* buffer, size_t chars_to_read);
-};
 
 // datastructure that keeps contigs sorted by name and position
 class GenomicMap {

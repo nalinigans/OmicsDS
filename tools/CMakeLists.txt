@@ -25,7 +25,7 @@
 #
 
 add_executable(omicsds_import import.cc)
-target_include_directories(omicsds_import PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/loader)
+target_include_directories(omicsds_import PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/loader ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
 target_link_libraries(omicsds_import omicsds_static)
 if(USE_GPERFTOOLS AND GPERFTOOLS_FOUND)
   target_link_libraries(omicsds_import ${GPERFTOOLS_PROFILER_LIBRARY})

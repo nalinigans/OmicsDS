@@ -81,7 +81,7 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
       SECTION("test no newline") {
         REQUIRE(FileUtility::write_file(tmp_file, test_text.substr(0, test_text.size()-1)) == TILEDB_OK);
         FileUtility fu = FileUtility(tmp_file);
-        
+
         std::string retval;
         
         REQUIRE(fu.generalized_getline(retval));
@@ -166,12 +166,12 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
     SECTION("test big writes", "[utility FileUtility read big-file]") {
       SECTION("test file bigger than buffer", "[utility FileUtility read big-file]") {
         std::string large_string = "";
-        FileUtility tmp_fu = FileUtility(tmp_file);
-        for(int i = 0; i < 2*tmp_fu.buffer_size; i++) {
+        size_t buffer_size = 512;
+        for(size_t i = 0; i < 2*buffer_size; i++) {
           large_string = large_string + "a\n";
         }
         REQUIRE(FileUtility::write_file(tmp_file, large_string) == TILEDB_OK);
-        FileUtility fu = FileUtility(tmp_file); // Need to recreate the FileUtility class to pick up the write
+        FileUtility fu = FileUtility(tmp_file, buffer_size);
 
         std::string retval;
         REQUIRE(fu.generalized_getline(retval));
@@ -191,7 +191,7 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
       SECTION("test file bigger than buffer without newline", "[utility FileUtility read big-file]") {
         std::string large_string = "";
         FileUtility tmp_fu = FileUtility(tmp_file);
-        for(int i = 0; i < 2*tmp_fu.buffer_size; i++) {
+        for(size_t i = 0; i < 2*tmp_fu.buffer_size; i++) {
           large_string = large_string + "a";
         }
         large_string = large_string + "\n";
@@ -201,6 +201,19 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
         std::string retval;
         REQUIRE(fu.generalized_getline(retval));
         REQUIRE(retval == large_string.substr(0, large_string.size() - 1));
+      }
+      SECTION("test buffer sizes", "[utility FileUtility buffer_size]") {
+        REQUIRE(FileUtility::write_file(tmp_file, test_text) == TILEDB_OK);
+        SECTION("test file smaller than default", "[utility FileUtility buffer_size]") {
+          FileUtility fu = FileUtility(tmp_file);
+          REQUIRE(fu.buffer_size == TileDBUtils::file_size(tmp_file));
+        }
+
+        SECTION("test custom buffer size", "[utility FileUtility buffer_size]") {
+          size_t file_size = TileDBUtils::file_size(tmp_file);
+          FileUtility fu = FileUtility(tmp_file, file_size/2);
+          REQUIRE(fu.buffer_size == file_size/2);
+        }
       }
     }
   }

@@ -35,6 +35,7 @@ set(OMICSDS_SOURCES
   ${OMICSDS_CPP}/loader/omicsds_export.cc
   ${OMICSDS_CPP}/utils/omicsds_encoder.cc
   ${OMICSDS_CPP}/utils/omicsds_logger.cc
+  ${OMICSDS_CPP}/utils/omicsds_file_utils.cc
   )
 
 # Use PIC
