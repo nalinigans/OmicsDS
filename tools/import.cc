@@ -1,8 +1,32 @@
+/**
+ * The MIT License (MIT)
+ * Copyright (c) 2022 Omics Data Automation, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * Experimental OmicsDS CLI
+ *
+ **/
+
 #include <iostream>
 #include <getopt.h>
 #include "omicsds_loader.h"
 #include "omicsds_export.h"
-// FIXME REMOVE
 #include <chrono>
 #include <thread>
 
@@ -21,47 +45,42 @@ enum ArgsEnum {
 void print_usage() {
   std::cout << "Usage: omicsds_import [options]\n"
             << "where options include:\n"
-            << "Generic options\n"
             << "\t \e[1m--workspace\e[0m, \e[1m-w\e[0m Path to workspace\n"
             << "\t \e[1m--array\e[0m, \e[1m-a\e[0m Name of array (should not include path to workspace)\n"
-            << "Import options\n"
-            << "\t \e[1m--mapping-file\e[0m, \e[1m-m\e[0m Path to file containing information to map from contig/offset pair to flattened coordinates. Currently supports fasta.fai (only needs first 3 columns: contig name, length, and starting index separated by tabs) \n"
-            << "\t \e[1m--file-list\e[0m, \e[1m-f\e[0m Path to file containing paths to files to be ingested (one path per line)\n"
-            << "\t \e[1m--sample-map\e[0m, \e[1m-s\e[0m Path to file containing information mapping between samples names and row indices in OmicsDS (each line is a sample name and an integer row number separated by a tab)\n"
-            << "\t \e[1m--sample-major\e[0m, Indicates that data from input files should be stored in sample major order on disk (cells for the same sample stored contiguously). Default behavior is position major\n"
-            << "\t\t Optional\n"
-            << "\t \e[1m--read-level\e[0m, \e[1m-r\e[0m Command to ingest read level related data (file list should contain SAM files) \n"
-            << "\t\t Optional\n"
-            << "\t \e[1m--interval-level\e[0m, \e[1m-i\e[0m Command to ingest interval level data (file list should contain Bed and Matrix files) \n"
-            << "\t\t Optional\n"
-            << "\t\t \e[1m--gene-mapping-file\e[0m, Path to gtf/gff/gi v1/gbed file for use with transcriptomics \n"
-            << "Query options\n"
+            << "\nImport options\n"
+            <<"\t one of the following \e[1m--read-level|--interval-level|--feature-level\e[0m should be specified for import\n"
+            << "\t \e[1m--read-level\e[0m, \e[1m-r\e[0m Option to ingest read level related data (file list should contain SAM files)\n"
+            << "\t \e[1m--interval-level\e[0m, \e[1m-i\e[0m Option to ingest interval level data (file list should contain Bed files)\n"
+            << "\t \e[1m--feature-level\e[0m, \e[1m-f\e[0m Option to ingest feature level data (file list should contain Matrix files)\n\n"
+            << "\t \e[1m--file-list\e[0m, \e[1m-l\e[0m Path to file containing paths to files to be ingested (one path per line)\n"
+            << "\t \e[1m--sample-map\e[0m, \e[1m-s\e[0m Path to file containing information mapping between samples names and row indices\n\t\t\tin OmicsDS (each line is a sample name and an integer row number separated by a tab)\n"
+            << "\t \e[1m--mapping-file\e[0m, \e[1m-m\e[0m Path to file containing information to map from contig/offset pair to flattened\n\t\t\tcoordinates. Currently supports fasta.fai (only needs first 3 columns: contig name, length,\n\t\t\tand starting index separated by tabs). Not needed for ingesting feature-level data\n"
+
+            << "\t \e[1m--sample-major\e[0m Option to indicate that data from input files should be stored in sample major order on disk\n\t\t\t(cells for the same sample stored contiguously). Default behavior is position major\n"
+            << "\nQuery options\n"
             << "\t \e[1m--generic-query\e[0m, \e[1m-g\e[0m Command to perform generic query. WIP. Output is probably not useful.\n"
             << "\t\t Optional\n"
-            << "\t \e[1m--export-sam\e[0m, Command to export data from query range as sam files, one per sample. Should only be used on data ingested via --read-level\n"
+            << "\t \e[1m--export-sam\e[0m Command to export data from query range as sam files, one per sample. Should only be used on data ingested via --read-level\n"
             << "\t\t Optional\n";
 }
 
 int main(int argc, char* argv[]) {
   char* cwd1 = getcwd(0, 0);
-  std::cerr << "**************************** first cwd is " << cwd1 << std::endl;
-
-  //read_sam_file("/nfs/home/andrei/benchmarking_requirements/toy.sam");
 
   enum options_enum { EXPORT_SAM, SAMPLE_MAJOR, GENE_MAPPING_FILE };
 
   static struct option long_options[] = {
     {"workspace",1,0,'w'},
     {"array",1,0,'a'},
-    {"mapping-file",1,0,'m'},
-    {"file-list",1,0,'f'},
-    {"sample-map",1,0,'s'},
     {"read-level",0,0,'r'},
+    {"interval-level", 0, 0, 'i'},
+    {"feature-level", 0, 0, 'f'},
+    {"file-list",1,0,'l'},
+    {"sample-map",1,0,'s'},
+    {"mapping-file",1,0,'m'},
     {"generic-query", 0, 0, 'g'},
     {"export-sam", 0, 0, EXPORT_SAM},
-    {"interval-level", 0, 0, 'i'},
     {"sample-major", 0, 0, SAMPLE_MAJOR},
-    {"gene-mapping-file", 1, 0, GENE_MAPPING_FILE}
   };
 
   std::string workspace = "";
@@ -70,32 +89,38 @@ int main(int argc, char* argv[]) {
   std::string file_list = "";
   std::string sample_map = "";
   bool read_level = false;
+  bool interval_level = false;
+  bool feature_level = false;
   bool generic_query = false;
   bool export_sam = false;
-  bool interval_level = false;
   bool position_major = true;
-  std::string gene_mapping_file = "";
 
   int c;
-  while ((c=getopt_long(argc, argv, "w:a:m:f:rs:gi", long_options, NULL)) >= 0) {
+  while ((c=getopt_long(argc, argv, "w:a:rifl:s:m:g", long_options, NULL)) >= 0) {
     switch (c) {
       case 'w':
-        workspace = std::string(optarg);
+        workspace = std::move(std::string(optarg));
         break;
       case 'a':
-        array = std::string(optarg);
-        break;
-      case 'm':
-        mapping_file = std::string(optarg);
-        break;
-      case 'f':
-        file_list = std::string(optarg);
-        break;
-      case 's':
-        sample_map = std::string(optarg);
+        array = std::move(std::string(optarg));
         break;
       case 'r':
         read_level = true;
+        break;
+      case 'i':
+        interval_level = true;
+        break;
+      case 'f':
+        feature_level = true;
+        break;
+      case 'l':
+        file_list = std::move(std::string(optarg));
+        break;
+      case 's':
+        sample_map = std::move(std::string(optarg));
+        break;        
+      case 'm':
+        mapping_file = std::move(std::string(optarg));
         break;
       case 'g':
         generic_query = true;
@@ -103,14 +128,8 @@ int main(int argc, char* argv[]) {
       case EXPORT_SAM:
         export_sam = true;
         break;
-      case 'i':
-        interval_level = true;
-        break;
       case SAMPLE_MAJOR:
         position_major = false;
-        break;
-      case GENE_MAPPING_FILE:
-        gene_mapping_file = std::string(optarg);
         break;
       default:
         std::cerr << "Unknown command line argument " << char(c) << "\n";
@@ -119,63 +138,61 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if(workspace == "") {
+  // Validate Options
+  if(workspace.empty()) {
     std::cerr << "Workspace required\n";
     print_usage();
     return -1;
   }
-  if(array == "") {
+  if(array.empty()) {
     std::cerr << "Array required\n";
     print_usage();
     return -1;
   }
-  if(read_level || interval_level) {
-    if(mapping_file == "") {
-      std::cerr << "Mapping file required\n";
-      print_usage();
+  if (!generic_query && !export_sam) {
+    if (!read_level && !interval_level && !feature_level) {
+      std::cerr << "One of (--read-level/-r) or (--interval-level/-i) or (--feature-level/-f) is required to be specified\n";
       return -1;
     }
-    if(file_list == "") {
+  }
+  if (read_level || interval_level || feature_level) {
+    if(file_list.empty()) {
       std::cerr << "File list required\n";
       print_usage();
       return -1;
     }
-    if(sample_map == "") {
+    if(sample_map.empty()) {
       std::cerr << "Sample map required\n";
       print_usage();
       return -1;
     }
   }
-
-  if(interval_level) {
-    if(gene_mapping_file == "") {
-      std::cerr << "Gene mapping file required\n";
+  if (read_level || interval_level) {
+    if(mapping_file.empty()) {
+      std::cerr << "Mapping file required\n";
       print_usage();
       return -1;
     }
   }
 
-  std::cout << "Hello there: " << workspace << ", " << array << ", " << mapping_file << std::endl;
-
 #ifdef USE_GPERFTOOLS
-    std::cout << "Profiling Started" << std::endl;
-    ProfilerStart("omicsds_import.gperf.prof");
+  std::cout << "Profiling Started" << std::endl;
+  ProfilerStart("omicsds_import.gperf.prof");
 #endif
 #ifdef USE_GPERFTOOLS_HEAP
-    HeapProfilerStart("omicsds_import.gperf.heap");
+  HeapProfilerStart("omicsds_import.gperf.heap");
 #endif  
-
-  if(read_level) {
-    {
-      ReadCountLoader l(workspace, array, file_list, sample_map, mapping_file, position_major);
-      l.initialize();
-      std::cout << "After ctor in main" << std::endl;
-      l.import();
-    }
-  }
-
-  if(interval_level) {
-    TranscriptomicsLoader l(workspace, array, file_list, sample_map, mapping_file, gene_mapping_file, position_major);
+  
+  if (read_level) {
+    ReadCountLoader l(workspace, array, file_list, sample_map, mapping_file, position_major);
+    l.initialize();
+    l.import();
+  } else if (interval_level) {
+    TranscriptomicsLoader l(workspace, array, file_list, sample_map, mapping_file, "", position_major);
+    l.initialize();
+    l.import();
+  } else if (feature_level) {
+    MatrixLoader l(workspace, array, file_list, sample_map);
     l.initialize();
     l.import();
   }
@@ -183,7 +200,6 @@ int main(int argc, char* argv[]) {
   if(generic_query) {
     std::cout << "===================================== NORMAL QUERY =========================================" << std::endl;
     OmicsExporter r(workspace, array);
-    //r.query({0, 1}, {59, 61});
     r.query();
   }
 
@@ -199,82 +215,4 @@ int main(int argc, char* argv[]) {
 #ifdef USE_GPERFTOOLS
     ProfilerStop();
 #endif
-
-  /*// FIXME remove
-  std::cerr << "FIXME remove end of main reading" << std::endl;
-
-  // ================================== ARRAY READ ======================
-
-  TileDB_CTX* tiledb_ctx;
-  TileDB_Array* tiledb_array;
-
-  CHECK_RC(tiledb_ctx_init(&tiledb_ctx, NULL));
-
-  const char array_name[] = "/nfs/home/andrei/OmicsDS/build.debug/workspace/sparse_arrays/array";
-
-  char buffer[1024];
-
-  char* cwd = getcwd(0, 0);
-  std::cerr << "**************************** cwd is " << cwd << std::endl;
-
-  // Initialize array
-  CHECK_RC(tiledb_array_init(
-           tiledb_ctx,                           // Context
-           &tiledb_array,                        // Array object
-           &array_name[0],                       // Array name
-           TILEDB_ARRAY_READ,                    // Mode
-           NULL,                                 // Whole domain
-           NULL,                                 // All attributes
-           0));                                  // Number of attributes
-
-  // Prepare cell buffers
-  size_t buffer_sample[50];
-  char buffer_sample_var[50];
-  size_t buffer_qname[50];
-  char buffer_qname_var[50];
-  uint16_t buffer_flag[50];
-  int64_t buffer_coords[50];
-  void* r_buffers[] =
-      { buffer_sample, buffer_sample_var, buffer_qname, buffer_qname_var, buffer_flag, buffer_coords };
-  size_t r_buffer_sizes[] =
-  {
-      sizeof(buffer_sample),
-      sizeof(buffer_sample_var),
-      sizeof(buffer_qname),
-      sizeof(buffer_qname_var),
-      sizeof(buffer_flag),
-      sizeof(buffer_coords)
-  };
-
-  // Read from array
-  CHECK_RC(tiledb_array_read(tiledb_array, r_buffers, r_buffer_sizes));
-
-  // Print cell values
-  int64_t result_num = r_buffer_sizes[0] / sizeof(int);
-  printf("%ld results\n", (long)result_num);
-  printf("coords\t flag\t   sample\t    qname\n");
-  printf("-----------------------\n");
-  for(int i=0; i<result_num; ++i) {
-    printf("%ld, %ld, %ld", (long)buffer_coords[3*i], (long)buffer_coords[3*i+1], (long)buffer_coords[3*i+2]);
-
-    printf("\t %3d", buffer_flag[i]);
-
-    size_t var_size = (i != result_num-1) ? buffer_sample[i+1] - buffer_sample[i]
-                                          : r_buffer_sizes[2] - buffer_sample[i];
-    printf("\t %4.*s\n", int(var_size), &buffer_sample_var[buffer_sample[i]]);
-
-    var_size = (i != result_num-1) ? buffer_qname[i+1] - buffer_qname[i]
-                                          : r_buffer_sizes[2] - buffer_qname[i];
-    printf("\t %4.*s\n", int(var_size), &buffer_qname_var[buffer_qname[i]]);
-  }
-
-  std::cerr << "After reading in import" << std::endl;
-
-  // Finalize the array
-  CHECK_RC(tiledb_array_finalize(tiledb_array));
-
-  // Finalize context
-  CHECK_RC(tiledb_ctx_finalize(tiledb_ctx));
-
-  return 0;*/
 }

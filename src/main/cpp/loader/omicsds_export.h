@@ -9,7 +9,7 @@ class OmicsExporter : public OmicsModule {
   public:
     OmicsExporter(const std::string& workspace, const std::string& array) : OmicsModule(workspace, array) {
       deserialize_schema();
-      tiledb_open_array(false);
+      tiledb_open_array(TILEDB_ARRAY_READ);
     }
   
     typedef std::function<void (const std::array<uint64_t, 3>& coords, const std::vector<OmicsFieldData>& data)> process_function;

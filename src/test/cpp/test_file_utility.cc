@@ -30,6 +30,42 @@
 #include "omicsds_schema.h"
 #include "tiledb_constants.h"
 
+std::vector<std::string> split(std::string str, std::string sep);
+
+TEST_CASE("test split", "[test_split]") {
+  auto splits = split("foo\tfoo1", "\t");
+  REQUIRE(splits.size() == 2);
+  CHECK(splits[0] == "foo");
+  CHECK(splits[1] == "foo1");
+
+  splits = split("foo\tfoo1", " \t");
+  REQUIRE(splits.size() == 2);
+  CHECK(splits[0] == "foo");
+  CHECK(splits[1] == "foo1");
+
+  splits = split("foo\t   \t foo1", " \t");
+  REQUIRE(splits.size() == 7);
+  CHECK(splits[0] == "foo");
+  CHECK(splits[1].empty());
+  CHECK(splits[5].empty());
+  CHECK(splits[6] == "foo1");
+
+  splits = split("foo\tfoo1 foo2", " \t,");
+  REQUIRE(splits.size() == 3);
+  CHECK(splits[0] == "foo");
+  CHECK(splits[1] == "foo1");
+  CHECK(splits[2] == "foo2");
+
+  splits = split("[foo|foo1|foo2]", "|");
+  REQUIRE(splits.size() == 3);
+  CHECK(splits[0] == "foo");
+  CHECK(splits[1] == "foo1");
+  CHECK(splits[2] == "foo2");
+
+  splits = split("[foo|foo1", "|");
+  REQUIRE(splits.size() == 0);
+}
+
 TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
   std::string test_text = "line1\nline2\n";
 

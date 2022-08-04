@@ -49,8 +49,8 @@ class OmicsModule {
     // tiledb* functions return tiledb return code
     int tiledb_create_array(const std::string& workspace, const std::string& array_name, const OmicsSchema& schema);
     int tiledb_create_array() { return tiledb_create_array(m_workspace, m_array, *m_schema); }
-    int tiledb_open_array(const std::string& workspace, const std::string& array_name, bool write = true);
-    int tiledb_open_array(bool write = true) { return tiledb_open_array(m_workspace, m_array, write); }
+    int tiledb_open_array(const std::string& workspace, const std::string& array_name, int mode=TILEDB_ARRAY_WRITE);
+    int tiledb_open_array(int mode=TILEDB_ARRAY_WRITE) { return tiledb_open_array(m_workspace, m_array, mode); }
     int tiledb_close_array();
     TileDB_CTX* m_tiledb_ctx;
     TileDB_Array* m_tiledb_array;

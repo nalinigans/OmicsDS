@@ -50,6 +50,32 @@
 #include <algorithm>
 #include <utility>
 
+class OmicsDSException : public std::exception {
+ public:
+  OmicsDSException(const std::string m="OmicsDS Exception") : m_msg(m) {}
+  ~OmicsDSException() {}
+  /** Returns the exception message. */
+  const char* what() const noexcept {
+    return m_msg.c_str();
+  }
+ private:
+  std::string m_msg;
+};
+
+class OmicsDSStorageException : public std::exception {
+ public:
+  OmicsDSStorageException(std::string m="OmicsDS Storage Exception") : m_msg(m) {
+    m += strlen(tiledb_errmsg)?" : "+std::string(tiledb_errmsg):"";
+  }
+  ~OmicsDSStorageException() {}
+  /** Returns the exception message. */
+  const char* what() const noexcept {
+    return m_msg.c_str();
+  }
+ private:
+  std::string m_msg;
+};
+
 void read_sam_file(std::string filename);
 
 // split str into tokens by sep
@@ -184,7 +210,8 @@ struct OmicsCell {
     return fields.size() == schema->attributes.size();
   }
 
-  static OmicsCell create_invalid_cell(); // possibly deprecated because OmicsFileReader::get_next_cells now returns a vector, so can return empty instead of invalid to indicate end of file
+  static OmicsCell create_invalid_cell(); // possibly deprecated because OmicsFileReader::get_next_cells now returns a
+  // vector, so can return empty instead of invalid to indicate end of file
 
   static bool is_invalid_cell(const OmicsCell& cell);
 
@@ -281,31 +308,29 @@ class BedReader : public OmicsFileReader {
     uint64_t m_row_idx; // row corresponding to sample
 };
 
-// reads matrix files (must have .resort extension)
-// expected format is somewhat nonstandard (tab separated)
-// either:
-// SAMPLE      [sample name] [sample name]
-// [gene name] [score]       [score]
-//
-// or
-//
-// GENE          [gene name]   [gene name]
-// [sample name] [score]       [score]
-// 
-// Currently matrix file can be either sample or position major, but must match schema order
-// TODO: support transposed orders (potentially by reading entire file and transposing in memory)
+/**
+ * Reads matrix files
+ * expected format is somewhat nonstandard (whitespace tab/comma/space separated)
+ * SAMPLE      [sample name] [sample name]
+ * [gene name] [score]       [score]
+ *               OR
+ * GENE          [gene name]   [gene name]
+ * [sample name] [score]       [score]
+ *
+ * Currently matrix file can be either sample or id major, but must match schema order
+ */
 class MatrixReader : public OmicsFileReader {
-  public:
-    MatrixReader(std::string filename, std::shared_ptr<OmicsSchema> schema, std::shared_ptr<SampleMap> sample_map, std::shared_ptr<GeneIdMap> gene_id_map, int file_idx);
-    std::vector<OmicsCell> get_next_cells() override;
-  protected:
-    std::shared_ptr<GeneIdMap> m_gene_id_map;
-    std::vector<std::string> m_columns; // can be samples or genes depending on m_position_major
-    bool m_position_major;
-    std::vector<float> m_row_scores; // buffer of scores in current row
-    size_t m_column_idx = 0; // current column position in matrix
-    std::string m_current_token; // can be sample or gene depending on m_position_major
-    bool parse_next(std::string& sample, std::string& gene, float& score);
+ public:
+  MatrixReader(std::string filename, std::shared_ptr<OmicsSchema> schema, std::shared_ptr<SampleMap> sample_map, int file_idx);
+  std::vector<OmicsCell> get_next_cells() override;
+ protected:
+  std::vector<std::string> m_columns; // can be samples or genes/transcripts depending on m_id_major
+  bool m_id_major;
+  std::vector<float> m_row_scores; // buffer of scores in current row
+  size_t m_column_idx = 0; // current column position in matrix
+  const std::string m_token_separator = "\t,";
+  std::string m_current_token; // can be sample or gene depending on m_id_major
+  bool parse_next(std::string& sample, std::string& gene, float& score);
 };
 
 // used to ingest information into OmicsDS
@@ -328,13 +353,13 @@ class OmicsLoader : public OmicsModule {
       const std::string& array,
       const std::string& file_list, // file with each line containing a path to a data file
       const std::string& sample_map, // see SampleMap struct
-      const std::string& mapping_file, // see GenomicMap struct
-      bool position_major // sample major (false) or position major (true)
+      const std::string& mapping_file = "", // see GenomicMap struct
+      bool position_major = true // sample major (false) or position major (true)
     );
     ~OmicsLoader() {
       tiledb_close_array();
     }
-    void import();// import data from callsets
+    virtual void import();// import data from callsets
     virtual void create_schema() = 0; //
     void initialize(); // cannot be part of constructor because it invokes create_schema, which is virtual
   protected:
@@ -345,11 +370,14 @@ class OmicsLoader : public OmicsModule {
     std::vector<std::vector<uint8_t>> var_buffers; // entries for constant length attributes will be empty
     std::vector<size_t> coords_buffer; // keeps 3d coords
     std::vector<size_t> attribute_offsets; // persists between writes
-    size_t buffer_size = 10240; // size of tiledb buffers
+    size_t buffer_size = 10240; // to use with the generalized_getline
 
     // insert relevant information in offset_buffers
     // and var_buffers (for variable fields)
     void buffer_cell(const OmicsCell& cell, int level = 0);
+    void write_buffers();
+    size_t m_buffered_cells = 0;
+    size_t m_total_processed_cells = 0;
 
     virtual void add_reader(const std::string& filename) = 0; // construct a derived class of OmicsFileReader and insert in m_files
     std::string m_file_list;
@@ -402,10 +430,36 @@ class TranscriptomicsLoader : public OmicsLoader {
       const std::string& mapping_file,
       const std::string& gene_mapping_file,
       bool position_major
-    ) : OmicsLoader(workspace, array, file_list, sample_map, mapping_file, position_major), m_gene_id_map(std::make_shared<GeneIdMap>(gene_mapping_file, m_schema)) {
+                          ) : OmicsLoader(workspace, array, file_list, sample_map, mapping_file, position_major)/*, m_gene_id_map(std::make_shared<GeneIdMap>(gene_mapping_file, m_schema))*/ {
     }
     virtual void create_schema() override;
   protected:
     virtual void add_reader(const std::string& filename) override;
-    std::shared_ptr<GeneIdMap> m_gene_id_map;
+  //    std::shared_ptr<GeneIdMap> m_gene_id_map;
+};
+
+class MatrixLoader : public OmicsLoader {
+ public:
+  MatrixLoader(const std::string& workspace,
+               const std::string& array,
+               const std::string& file_list,
+               const std::string& sample_map)
+      : OmicsLoader(workspace, array, file_list, sample_map) {}
+  virtual void create_schema() override;
+  virtual void import() override;
+ protected:
+  virtual void add_reader(const std::string& filename) override;
+};
+
+class MatrixCell : public OmicsCell {
+ public:
+  MatrixCell(std::array<int64_t, 2> coords, int8_t version, std::shared_ptr<OmicsSchema> schema, int file_idx)
+      : OmicsCell(coords, schema, file_idx) {
+    m_version = version;
+  }
+  uint8_t get_version() {
+    return m_version;
+  }
+ private:
+  uint8_t m_version = 0;
 };

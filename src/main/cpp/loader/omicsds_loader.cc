@@ -25,7 +25,11 @@
  */
 
 #include "omicsds_loader.h"
+
 #include "omicsds_export.h"
+#include "omicsds_file_utils.h"
+#include "omicsds_logger.h"
+#include "omicsds_encoder.h"
 
 std::vector<std::string> split(std::string str, std::string sep) {
   std::vector<std::string> retval;
@@ -33,11 +37,16 @@ std::vector<std::string> split(std::string str, std::string sep) {
 
   if(str.length() >= 2) {
     if(str[0] == '[') {
-       str = str.substr(1, str.length() - 2);
+      if (str[str.length()-1] == ']') {
+        str = str.substr(1, str.length() - 2);
+      } else {
+        logger.error("String {} could not be split as there is no matching right bracket", str);
+        return retval;
+      }
     }
   }
 
-  while((index = str.find(sep)) != std::string::npos) {
+  while((index = str.find_first_of(sep)) != std::string::npos) {
     retval.push_back(str.substr(0, index));
     str.erase(0, index + 1);
   }
@@ -208,11 +217,9 @@ GenomicMap::GenomicMap(std::shared_ptr<FileUtility> mapping_reader): m_mapping_r
   std::iota(idxs_position.begin(), idxs_position.end(), 0);
   std::sort(idxs_position.begin(), idxs_position.end(), [&](auto l, auto r) { return contigs[l].starting_index < contigs[r].starting_index; });
 
-  std::cout << "REMOVE" << std::endl;
   for(auto& c : contigs) {
-    std::cout << "(" << c.name << ", " << c.length << ", " << c.starting_index << ")" << std::endl;
+    logger.debug("Contigs : name={} length={} starting_index={}", c.name, c.length, c.starting_index);
   }
-  std::cout << std::endl << std::endl;
 }
 
 uint64_t GenomicMap::flatten(std::string contig_name, uint64_t offset) {
@@ -236,11 +243,11 @@ uint64_t GenomicMap::flatten(std::string contig_name, uint64_t offset) {
 }
 
 bool equivalent_schema(const OmicsSchema& l, const OmicsSchema& r) {
-  if(l.attributes.size() != r.attributes.size()) return false;
+  if (l.attributes.size() != r.attributes.size()) return false;
 
-  for(auto li = l.attributes.begin(), ri = r.attributes.begin(); li != l.attributes.end(), ri != r.attributes.end(); li++, ri++) {
-    if(li->first != ri->first) return false;
-    if(li->second.type != ri->second.type) return false;
+  for(auto li = l.attributes.begin(), ri = r.attributes.begin(); ri != r.attributes.end(); li++, ri++) {
+    if (li->first != ri->first) return false;
+    if (li->second.type != ri->second.type) return false;
   }
 
   return true;
@@ -555,47 +562,46 @@ std::vector<OmicsCell> BedReader::get_next_cells() {
   return { };
 }
 
-MatrixReader::MatrixReader(std::string filename, std::shared_ptr<OmicsSchema> schema, std::shared_ptr<SampleMap> sample_map, std::shared_ptr<GeneIdMap> gene_id_map, int file_idx): OmicsFileReader(filename, schema, sample_map, file_idx), m_gene_id_map(gene_id_map) {
+MatrixReader::MatrixReader(std::string filename, std::shared_ptr<OmicsSchema> schema, std::shared_ptr<SampleMap> sample_map,  int file_idx): OmicsFileReader(filename, schema, sample_map, file_idx) {
   std::string line;
 
   if(!m_reader_util->generalized_getline(line)) {
-    std::cerr << "Error, file " << filename << " is empty" << std::endl;
-    exit(1);
+    logger.fatal(OmicsDSException(logger.format("Matrix file {} is empty", filename)));
   }
 
-  auto toks = split(line, "\t"); // TODO maybe support commas as well
+  auto toks = split(line, m_token_separator);
   if(toks[0] == "GENE") {
-    m_position_major = false;
+    m_id_major = false;
+  } else if(toks[0] == "SAMPLE") {
+    m_id_major = true;
+  } else {
+    logger.fatal(OmicsDSException(logger.format("Error reading matrix file {}. {}", filename, "\nMatrix files should have either \n\t \"GENE\t[gene1]\t[gene2]\"\n  OR\n\t \"SAMPLE\t[sample1]\t[sample2]\"\n  for a header")));
   }
-  else if(toks[0] == "SAMPLE") {
-    m_position_major = true;
+
+  if(m_id_major != m_schema->position_major()) {
+    logger.fatal(OmicsDSException(logger.format("Error order of matrix file {} does not match that of schema, they should both be either gene/transcript id major or sample major", filename)));
   }
-  else {
-    std::cerr << "Error reading file " << filename << std::endl;
-    std::cerr << "Matrix files should be tab separated in format: " << std::endl;
-    std::cerr << "GENE\t[gene1]\t[gene2]" <<  std::endl;
-    std::cerr << "[sample1]\t[score1]\t[score2]" << std::endl;
-    std::cerr << "Or the transpose (keyword SAMPLE instead of GENE, genes across rows)" << std::endl;
-  }
-  if(m_position_major != m_schema->position_major()) {
-    std::cerr << "Error order of matrix file " << filename << " does not match that of schema (must both be position or sample major for now, WIP)" << std::endl;
-    exit(1);
-  }
+
   m_columns = std::vector<std::string>(toks.begin() + 1, toks.end());
   m_row_scores = std::vector<float>(m_columns.size(), 0);
   m_column_idx = m_columns.size(); // to force parsing next line
+
+  logger.info("MatrixReader Initialized");
 }
 
 bool MatrixReader::parse_next(std::string& sample, std::string& gene, float& score) {
-  while(m_column_idx >= m_row_scores.size()) {
+  if (m_column_idx >= m_row_scores.size()) {
     std::string line;
-    if(!m_reader_util->generalized_getline(line)) {
+    if (!m_reader_util->generalized_getline(line)) {
+      logger.debug("*** End of input!!!");
       return false;
     }
 
-    auto toks = split(line, "\t");
+    auto toks = split(line, m_token_separator);
     if(toks.size() != m_columns.size() + 1) { // sample/gene id followed by scores
-      continue;
+      logger.fatal(OmicsDSException(logger.format("Error with matrix cell values in input, number of columns({}) do not match header({})",
+                                                  toks.size()-1, m_columns.size())),
+                   "Erroneous line from file({}) : \n{}{}", get_filename(), line.substr(0, 60), line.length()>59?"...":"");
     }
 
     m_current_token = toks[0];
@@ -604,19 +610,20 @@ bool MatrixReader::parse_next(std::string& sample, std::string& gene, float& sco
       for(size_t i = 0; i < m_columns.size(); i++) {
         m_row_scores[i] = std::stof(toks[i + 1]);
       }
-    }
-    catch (...) {
-      continue;
+    } catch (...) {
+      logger.fatal(OmicsDSException("Error with matrix cell values in input, they have to be numbers"));
     }
     m_column_idx = 0;
-    break;
   }
 
-  if(m_position_major) {
+  if (m_column_idx == m_row_scores.size()) {
+    return false;
+  }
+
+  if(m_id_major) {
     sample = m_columns[m_column_idx];
     gene = m_current_token;
-  }
-  else {
+  } else {
     sample = m_current_token;
     gene = m_columns[m_column_idx];
   }
@@ -631,33 +638,21 @@ std::vector<OmicsCell> MatrixReader::get_next_cells() {
   uint64_t row_idx;
 
   while(parse_next(sample_name, gene_name, score)) {
-    if(!m_sample_map->count(sample_name) || !m_gene_id_map->count(gene_name)) { continue; }
-    
-    row_idx = (*m_sample_map)[sample_name];
-    GeneIdMap::Gene& gene = (*m_gene_id_map)[gene_name];
-
-    std::string name = "N/A";
-
-    OmicsCell cell({ (int64_t)row_idx, (int64_t)gene.flattened_start }, m_schema, m_file_idx);
-    cell.add_field_ptr("CHROM", gene.chrom.c_str(), gene.chrom.length());
-    cell.add_field("START", gene.start);
-    cell.add_field("END", gene.end);
-    cell.add_field("SCORE", score);
-    cell.add_field_ptr("GENE", gene_name.c_str(), gene_name.length());
-    cell.add_field_ptr("SAMPLE_NAME", sample_name.c_str(), sample_name.length());
-    cell.add_field_ptr("NAME", name.c_str(), name.length());
-
-    OmicsCell end_cell = cell;
-    end_cell.file_idx = -1;
-    end_cell.coords[1] = gene.flattened_end;
-
-    if(gene.flattened_start == gene.flattened_end) {
-      return { cell };
+    if(m_sample_map->count(sample_name)) {
+      gtf_encoding_t encoded_id = encode_gtf_id(gene_name);
+      logger.debug("Gene={} Encoded ID={:#08x} {:#08x}", gene_name, encoded_id.first, encoded_id.second);
+      if (encoded_id.first) {
+        row_idx = (*m_sample_map)[sample_name];
+        MatrixCell cell({ (int64_t)row_idx, (int64_t)encoded_id.first }, encoded_id.second, m_schema, m_file_idx);
+        cell.add_field("SCORE", score);
+        cell.add_field("VERSION", encoded_id.second);
+        return { cell };
+      } else {
+        logger.error("Gene name {} cannot be encoded", gene_name);
+      }
     }
-    return { cell, end_cell };
   }
-
-  return {};
+  return { };
 }
 
 int OmicsModule::tiledb_create_array(const std::string& workspace, const std::string& array_name, const OmicsSchema& schema) {
@@ -734,8 +729,7 @@ int OmicsModule::tiledb_create_array(const std::string& workspace, const std::st
       full_name.c_str(),                                 // Array name
       attributes,                                        // Attributes
       schema.attributes.size(),                          // Number of attributes
-      std::numeric_limits<int64_t>::max(),               // Capacity
-      //50,                                                // Capacity
+      1024,                                              // Capacity
       order,                                             // Cell order
       cell_val_num,                                      // Number of cell values per attribute
       compression,                                       // Compression
@@ -765,7 +759,7 @@ int OmicsModule::tiledb_create_array(const std::string& workspace, const std::st
   return 0;
 }
 
-int OmicsModule::tiledb_open_array(const std::string& workspace, const std::string& array_name, bool write) {
+int OmicsModule::tiledb_open_array(const std::string& workspace, const std::string& array_name, int mode) {
   CHECK_RC(tiledb_ctx_init(&m_tiledb_ctx, NULL));
 
   std::string path = workspace + "/" + array_name;
@@ -775,7 +769,7 @@ int OmicsModule::tiledb_open_array(const std::string& workspace, const std::stri
       m_tiledb_ctx,                                      // Context
       &m_tiledb_array,                                   // Array object
       path.c_str(),                                      // Array name
-      write ? TILEDB_ARRAY_WRITE : TILEDB_ARRAY_READ,    // Mode
+      mode,                                              // Mode
       NULL,                                              // Entire domain
       NULL,                                              // All attributes
       0));                                               // Number of attributes
@@ -819,6 +813,43 @@ int OmicsLoader::tiledb_write_buffers() {
   return 0;
 }
 
+static std::string format_number(uint64_t number) {
+  std::vector<std::string> suffix = { "", "K", "M", "G", "T" };
+  auto i = 0u;
+  while (number > 0) {
+    if (i > suffix.size()) {
+      i--;
+      break;
+    } if (number/1024 == 0) {
+      return std::to_string(number) + suffix[i];
+    } else {
+      number /= 1024;
+      i++;
+    }
+  }
+  return std::to_string(number) + suffix[i];
+}
+
+#define PATH (SLASHIFY(m_workspace)+m_array)
+
+void OmicsLoader::write_buffers() {
+  if (tiledb_write_buffers()) {
+    logger.fatal(OmicsDSStorageException(logger.format("Error writing buffers to array {}", PATH)));
+  }
+  // Clear TileDB Buffers
+  int i = 0;
+  for(auto it = m_schema->attributes.begin(); it != m_schema->attributes.end(); it++, i++) {
+    offset_buffers[i].clear();
+    if(it->second.length == TILEDB_VAR_NUM) {
+      var_buffers[i].clear();
+    }
+  }
+  coords_buffer.clear();
+  m_total_processed_cells += m_buffered_cells;
+  logger.info("Processed {}/{} cells", format_number(m_total_processed_cells), format_number(252000000));
+  m_buffered_cells = 0;
+}
+
 void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
   auto fiter = cell.fields.begin();
   auto aiter = m_schema->attributes.begin();
@@ -846,6 +877,19 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
   coords_buffer.push_back(cell.coords[0]);
   coords_buffer.push_back(cell.coords[1]);
   coords_buffer.push_back(level);
+
+  bool close_array = less_than(m_pq.top(), cell);
+  if (++m_buffered_cells > 1024*1024*1/*1M cells ~320MB for single cell*/ || close_array) {
+    write_buffers();
+  }
+  if (close_array) {
+    if (tiledb_close_array()) {
+      logger.fatal(OmicsDSStorageException(logger.format("Error closing array {}", PATH)));
+    }
+    if (tiledb_open_array(m_workspace, m_array)) {
+      logger.fatal(OmicsDSStorageException(logger.format("Error opening array {}", PATH)));
+    }
+  }
 }
 
 void ReadCountLoader::create_schema() {
@@ -874,7 +918,7 @@ void TranscriptomicsLoader::create_schema() {
   m_schema->attributes.emplace("START", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_uint64_t, 1));
   m_schema->attributes.emplace("END", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_uint64_t, 1));
   m_schema->attributes.emplace("SCORE", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_float_t, 1));
-  m_schema->attributes.emplace("GENE", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_char, -1)); // Will be N/A for bed files
+  //  m_schema->attributes.emplace("GENE", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_char, -1)); // Will be N/A for bed files
   m_schema->attributes.emplace("SAMPLE_NAME", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_char, -1));
   m_schema->attributes.emplace("NAME", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_char, -1)); // Field in bed files, will be N/A for matrix files
 }
@@ -883,9 +927,17 @@ void TranscriptomicsLoader::add_reader(const std::string& filename) {
   if(std::regex_match(filename, std::regex("(.*)(bed)($)"))) {
     m_files.push_back(std::make_shared<BedReader>(filename, m_schema, m_sample_map, m_files.size()));
   }
-  else if(std::regex_match(filename, std::regex("(.*)(resort)($)"))) {
-    m_files.push_back(std::make_shared<MatrixReader>(filename, m_schema, m_sample_map, m_gene_id_map, m_files.size()));
-  }
+  //  else if(std::regex_match(filename, std::regex("(.*)(resort)($)"))) {
+    // m_files.push_back(std::make_shared<MatrixReader>(filename, m_schema, m_sample_map, m_gene_id_map, m_files.size()));
+  // }
+}
+
+void MatrixLoader::create_schema() {
+  m_schema->attributes.emplace("SCORE", OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_float_t, 1));
+}
+
+void MatrixLoader::add_reader(const std::string& filename) {
+  m_files.push_back(std::make_shared<MatrixReader>(filename, m_schema, m_sample_map, m_files.size()));
 }
 
 SampleMap::SampleMap(const std::string& sample_map) {
@@ -1124,11 +1176,10 @@ void OmicsLoader::push_from_all_files() {
     if(!f) continue;
 
     auto cells = f->get_next_cells();
-    std::cout << "REMOVE pushing cells from file " << f->get_filename() << std::endl;
     for(auto& c : cells) {
       if(OmicsCell::is_invalid_cell(c)) continue;
       c.coords = m_schema->swap_order(c.coords); // to schema order
-      std::cout << "\tREMOVE " << container_to_string(c.coords) << std::endl;
+      logger.debug("1 Cell coords {:#08x} {:#08x} from file {}", c.coords[0], c.coords[1], f->get_filename());
       m_pq.push(c);
     }
   }
@@ -1139,11 +1190,10 @@ void OmicsLoader::push_from_idxs(const std::set<int>& idxs) {
     if(idx < 0) continue;
 
     auto cells = m_files[idx]->get_next_cells();
-    std::cout << "REMOVE pushing cells from file " << idx << std::endl;
     for(auto& c : cells) {
       if(OmicsCell::is_invalid_cell(c)) continue;
       c.coords = m_schema->swap_order(c.coords); // to schema order
-      std::cout << "\tREMOVE " << container_to_string(c.coords) << std::endl;
+      logger.debug("2 Cell coords {:#08x} {:#08x} from file {}", c.coords[0], c.coords[1], idx);
       m_pq.push(c);
     }
   }
@@ -1186,15 +1236,22 @@ void OmicsLoader::import() {
       last_coords = cell.coords;
     }
 
-    // write cell
-    std::cerr << "REMOVE import buffering cell " << std::endl;
-    std::cerr << cell.to_string() << std::endl << std::endl; // FIXME write to disk
+    // Buffer cell. Persist to storage if number of cells has passed threshold and clear buffers.
     buffer_cell(cell, level);
   }
-  std::cerr << "REMOVE after while tiledb_write_buffers" << std::endl;
+  // Persist remaining cells in buffers.
   tiledb_write_buffers();
+}
 
-  //if(valid && current_cell.coords[0] >= 0 && current_cell.coords[1] >= 0) { // see if last cell needs to be written to disk
-  //  std::cout << current_cell.to_string() << std::endl << std::endl; // FIXME write to disk
-  //}
+void MatrixLoader::import() {
+  logger.info("Starting import...");
+  while(m_pq.size()) {
+    auto cell = m_pq.top();
+    m_pq.pop();
+    push_file_from_cell(cell);
+    MatrixCell *matrix_cell = (MatrixCell *)&cell;
+    buffer_cell(cell, matrix_cell->get_version());
+  }
+  write_buffers();
+  logger.info("Import DONE");
 }

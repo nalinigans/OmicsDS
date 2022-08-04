@@ -46,10 +46,10 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range, std::array<int64_
       array_name.c_str(),                            // Array name
       TILEDB_ARRAY_READ,                             // Mode
       subarray,                                      // Constrain in subarray
-      0,                                    // Subset on attributes
+      0,                                             // Subset on attributes
       m_schema->attributes.size(),                   // Number of attributes
-      pointers,                                       // Buffers used internally
-      sizes);                                 // Buffer sizes
+      pointers,                                      // Buffers used internally
+      sizes);                                        // Buffer sizes
 
  
   std::vector<OmicsFieldData> data(m_schema->attributes.size());
@@ -72,7 +72,7 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range, std::array<int64_
       data[i].data = std::vector<uint8_t>(a1_v, a1_v + a1_size);
 
       // Print value (if not a deletion)
-      if(*a1_v != TILEDB_EMPTY_INT32) { 
+      if(*a1_v != TILEDB_EMPTY_INT8) { 
         std::cout << "attribute " << a.first << std::endl;
         printf("%3d\n", *a1_v);
         std::cout << a.first << " size " << a1_size << std::endl;
