@@ -31,7 +31,7 @@
 // for reading/writing local/cloud files using TileDBUtils api
 struct FileUtility {
   // only need to construct for reading, write functionality is static
-  FileUtility(const std::string& filename, size_t buffer_size = 512);
+  FileUtility(const std::string& filename, size_t buffer_size = 1024*1024*8);
   ~FileUtility();
 
   std::string filename;

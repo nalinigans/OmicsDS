@@ -43,10 +43,14 @@ TEST_CASE("test encoder", "[test_encoder]") {
   CHECK(decode_gtf_id(encoded) == gtf_id);
 
   gtf_id = "ENST00000456328.111";
+  CHECK(!find_encoding(gtf_id, encoded));
   encoded = encode_gtf_id(gtf_id);
+  CHECK(find_encoding(gtf_id, encoded));
   CHECK(encoded.first == 456328);
   CHECK(encoded.second == 111);
+  CHECK(find_decoding(encoded, gtf_id));
   CHECK(decode_gtf_id(encoded) == gtf_id);
+  CHECK(find_decoding(encoded, gtf_id));
 
   gtf_id = "ENSG00000456328.111";
   encoded = encode_gtf_id(gtf_id);
@@ -60,6 +64,12 @@ TEST_CASE("test encoder", "[test_encoder]") {
                           | (uint64_t)(/*encode_kind_of_organism["MU"]*/1) << 56 | 456328));
   CHECK(encoded.second == 111);
   CHECK(decode_gtf_id(encoded) == gtf_id);
+
+  encoded.second = 222;
+  CHECK(!find_decoding(encoded, gtf_id));
+  CHECK(decode_gtf_id(encoded) == "ENSEMU00000456328.222");
+  CHECK(find_decoding(encoded, gtf_id));
+  CHECK(gtf_id == "ENSEMU00000456328.222");
 
   // Test not valid encodings
   encoded = encode_gtf_id("gibberish");

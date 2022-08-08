@@ -31,6 +31,8 @@
 #include "omicsds_logger.h"
 #include "omicsds_encoder.h"
 
+#include <tuple>
+
 std::vector<std::string> split(std::string str, std::string sep) {
   std::vector<std::string> retval;
   size_t index;
@@ -539,8 +541,6 @@ MatrixReader::MatrixReader(std::string filename, std::shared_ptr<OmicsSchema> sc
   m_columns = std::vector<std::string>(toks.begin() + 1, toks.end());
   m_row_scores = std::vector<float>(m_columns.size(), 0);
   m_column_idx = m_columns.size(); // to force parsing next line
-
-  logger.info("MatrixReader Initialized");
 }
 
 bool MatrixReader::parse_next(std::string& sample, std::string& gene, float& score) {
@@ -749,17 +749,17 @@ int OmicsLoader::tiledb_write_buffers() {
 
   int i = 0;
   for(auto it = m_schema->attributes.begin(); it != m_schema->attributes.end(); it++, i++) {
-    buffers_vec.push_back(offset_buffers[i].data());
-    buffer_sizes_vec.push_back(offset_buffers[i].size());
+    buffers_vec.push_back(m_buffers[i].data());
+    buffer_sizes_vec.push_back(m_buffer_lengths[i]);
 
     if(it->second.length == TILEDB_VAR_NUM) {
-      buffers_vec.push_back(var_buffers[i].data());
-      buffer_sizes_vec.push_back(var_buffers[i].size());
+      buffers_vec.push_back(m_var_buffers[i].data());
+      buffer_sizes_vec.push_back(m_var_buffer_lengths[i]);
     }
   }
 
-  buffers_vec.push_back(coords_buffer.data());
-  buffer_sizes_vec.push_back(sizeof(int64_t) * coords_buffer.size());  
+  buffers_vec.push_back(m_coords_buffer.data());
+  buffer_sizes_vec.push_back(m_coords_buffer_length*sizeof(size_t));
 
   // Write to array
   CHECK_RC(tiledb_array_write(m_tiledb_array, const_cast<const void**>(buffers_vec.data()), buffer_sizes_vec.data()));
@@ -790,47 +790,62 @@ void OmicsLoader::write_buffers() {
   if (tiledb_write_buffers()) {
     logger.fatal(OmicsDSStorageException(logger.format("Error writing buffers to array {}", PATH)));
   }
-  // Clear TileDB Buffers
-  int i = 0;
-  for(auto it = m_schema->attributes.begin(); it != m_schema->attributes.end(); it++, i++) {
-    offset_buffers[i].clear();
-    if(it->second.length == TILEDB_VAR_NUM) {
-      var_buffers[i].clear();
-    }
-  }
-  coords_buffer.clear();
   m_total_processed_cells += m_buffered_cells;
   logger.info("Processed {}/{} cells", format_number(m_total_processed_cells), format_number(252000000));
+  // Reset buffers' lengths
+  for (auto i=0u; i<m_schema->attributes.size(); i++) {
+    m_buffer_lengths[i] = 0;
+    m_var_buffer_lengths[i] = 0;
+  }
+  m_coords_buffer_length = 0;
   m_buffered_cells = 0;
+  memset(m_attribute_offsets.data(), 0, m_attribute_offsets.size()*sizeof(size_t));
+}
+
+bool OmicsLoader::check_buffer_sizes(const OmicsCell& cell) {
+  assert(cell.fields.size() == m_schema->attributes.size());
+  for (auto [i,attribute]=std::tuple{0u,m_schema->attributes.begin()}; i<m_schema->attributes.size(); i++,attribute++) {
+    auto& field = cell.fields[i].data;
+    int length = attribute->second.length;
+    size_t size = attribute->second.element_size();
+    if(length == TILEDB_VAR_NUM) { // variable length
+      if (m_buffer_lengths[i] + sizeof(size_t) > buffer_size) return false;
+      if (m_var_buffer_lengths[i] + field.size() > buffer_size) return false;
+    } else {
+      if (m_buffer_lengths[i] + field.size() > buffer_size) return false;
+    }
+  }
+  if (m_coords_buffer_length + 3*sizeof(uint64_t) > buffer_size) return false;
+  return true;
 }
 
 void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
-  auto fiter = cell.fields.begin();
-  auto aiter = m_schema->attributes.begin();
-  int i = 0;
-  for(; fiter != cell.fields.end() && aiter != m_schema->attributes.end(); fiter++, aiter++, i++) {
-    auto& data = fiter->data;
+  if (!check_buffer_sizes(cell)) {
+    write_buffers();
+  }
 
-    int length = aiter->second.length;
-    size_t size = aiter->second.element_size();
+  for (auto [i,attribute]=std::tuple{0u,m_schema->attributes.begin()}; i<m_schema->attributes.size(); i++,attribute++) {
+    auto& field = cell.fields[i].data;
+    int length = attribute->second.length;
+    size_t size = attribute->second.element_size();
     if(length == TILEDB_VAR_NUM) { // variable length
-      OmicsFieldData::push_back<size_t>(offset_buffers[i], attribute_offsets[i]);
-      attribute_offsets[i] += data.size();
-      for(auto& c : data) {
-        var_buffers[i].push_back(c);
-      }
-    }
-    else {
+      memcpy(m_buffers[i].data()+m_buffer_lengths[i], &m_attribute_offsets[i], sizeof(size_t));
+      memcpy(m_var_buffers[i].data()+m_var_buffer_lengths[i], field.data(), field.size());
+      m_attribute_offsets[i] += field.size();
+      m_buffer_lengths[i] += sizeof(size_t);
+      m_var_buffer_lengths[i] += field.size();
+    } else {
       assert(length >= 0); // Should only be negative if variable
-      assert(data.size() == size * (size_t) length);
-      for(auto& c : data) {
-        offset_buffers[i].push_back(c);
-      }
+      assert(field.size() == size * (size_t) length);
+      memcpy(m_buffers[i].data()+m_buffer_lengths[i], field.data(), field.size());
+      m_buffer_lengths[i] += field.size();
     }
   }
-  coords_buffer.push_back(cell.coords[0]);
-  coords_buffer.push_back(cell.coords[1]);
-  coords_buffer.push_back(level);
+
+  memcpy(m_coords_buffer.data()+m_coords_buffer_length++, &cell.coords[0], sizeof(uint64_t));
+  memcpy(m_coords_buffer.data()+m_coords_buffer_length++, &cell.coords[1], sizeof(uint64_t));
+  uint64_t this_level = (uint64_t)level;
+  memcpy(m_coords_buffer.data()+m_coords_buffer_length++, &this_level, sizeof(uint64_t));
 
   bool close_array = less_than(m_pq.top(), cell);
   if (++m_buffered_cells > 1024*1024*1/*1M cells ~320MB for single cell*/ || close_array) {
@@ -1095,16 +1110,24 @@ OmicsLoader::OmicsLoader(
                          const std::string& sample_map,
                          const std::string& mapping_file,
                          bool position_major
-                        ): OmicsModule(workspace, array, mapping_file, position_major), m_file_list(file_list), m_sample_map(std::make_shared<SampleMap>(sample_map)), m_pq(comparitor) {}
+                        ): OmicsModule(workspace, array, mapping_file, position_major), m_file_list(file_list), m_sample_map(std::make_shared<SampleMap>(sample_map)), m_pq(comparator) {}
 
 void OmicsLoader::initialize() { // FIXME move file reader creation to somewhere virtual
   create_schema();
 
   // set up buffers
-  offset_buffers = std::vector<std::vector<uint8_t>>(m_schema->attributes.size());
-  var_buffers = std::vector<std::vector<uint8_t>>(m_schema->attributes.size());
-  coords_buffer.clear();
-  attribute_offsets = std::vector<size_t>(m_schema->attributes.size(), 0);
+  m_buffers = std::vector<std::vector<uint8_t>>(m_schema->attributes.size());
+  m_var_buffers = std::vector<std::vector<uint8_t>>(m_schema->attributes.size());
+  m_attribute_offsets = std::vector<size_t>(m_schema->attributes.size(), 0);
+
+  for (auto i=0u; i<m_schema->attributes.size(); i++) {
+    m_buffers[i].resize(buffer_size);
+    m_var_buffers[i].resize(buffer_size);
+  }
+  m_coords_buffer.resize(3*buffer_size);
+  m_buffer_lengths.resize(m_schema->attributes.size(), 0);
+  m_var_buffer_lengths.resize(m_schema->attributes.size(), 0);
+  m_coords_buffer_length=0;
 
   // create workspace/array
   tiledb_create_array(m_workspace, m_array, *m_schema);

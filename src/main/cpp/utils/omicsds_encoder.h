@@ -46,12 +46,22 @@
 /* The first of the pair points to the encoded gene/transcript id and the second to the version with '0' as the default */
 typedef std::pair<uint64_t, uint8_t>  gtf_encoding_t;
 
+/**
+ * Should return true if the gtf id was found in the internally cached encoding map
+ */
+bool find_encoding(std::string gtf_id, gtf_encoding_t& encoded_gtf);
+
 /** 
  * Encodes gene/transcript ids, by mapping the id prefixes(ENSG, ENST, ENSE) to numbers and then using a composite of this 
  * number with the rest of the id that is assumed to be a 11 digit numeral. The version is stored separately as the second
  * in a pair, see gtf_encoding_t above.
  */
 gtf_encoding_t encode_gtf_id(std::string gtf_id);
+
+/**
+ * Should return true if the encoded gtf can be associated with a gtf id from the internally cached map
+ */
+bool find_decoding(const gtf_encoding_t& encoded_gtf, std::string& gtf_id);
 
 /**
  * Decodes the given composite encoded id to its original string format.

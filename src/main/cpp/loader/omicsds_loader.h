@@ -21,7 +21,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * Specification for a generic SAM reader
+ * Specification for supported Omics loaders
  */
 
 #pragma once
@@ -365,14 +365,25 @@ class OmicsLoader : public OmicsModule {
   protected:
     std::shared_ptr<SampleMap> m_sample_map;
     int tiledb_write_buffers();
-    // data that will be given to tiledb
-    std::vector<std::vector<uint8_t>> offset_buffers; // encodes offset for variable length attributes, and data for constant length ones
-    std::vector<std::vector<uint8_t>> var_buffers; // entries for constant length attributes will be empty
-    std::vector<size_t> coords_buffer; // keeps 3d coords
-    std::vector<size_t> attribute_offsets; // persists between writes
-    size_t buffer_size = 10240; // to use with the generalized_getline
 
-    // insert relevant information in offset_buffers
+    // data for tiledb
+    // stores offset for variable length attributes, and data for constant length ones
+    std::vector<std::vector<uint8_t>> m_buffers;
+    // entries for constant length attributes will be empty
+    std::vector<std::vector<uint8_t>> m_var_buffers;
+    // keeps 3d coords
+    std::vector<uint64_t> m_coords_buffer;
+    // persists between writes
+    std::vector<size_t> m_attribute_offsets;
+
+    // TODO: should be passed in via api or tools
+    size_t buffer_size = 10240;
+    bool check_buffer_sizes(const OmicsCell& cell);
+    std::vector<size_t> m_buffer_lengths;
+    std::vector<size_t> m_var_buffer_lengths;
+    size_t m_coords_buffer_length;
+
+    // insert relevant information in buffers
     // and var_buffers (for variable fields)
     void buffer_cell(const OmicsCell& cell, int level = 0);
     void write_buffers();
@@ -385,7 +396,7 @@ class OmicsLoader : public OmicsModule {
     typedef std::shared_ptr<OmicsFileReader> omics_fptr;
     std::priority_queue<OmicsCell, std::vector<OmicsCell>, std::function<bool(OmicsCell, OmicsCell)>> m_pq;
     int m_idx;
-    static bool comparitor(OmicsCell _l, OmicsCell _r) { // returns which cell is first in schema order
+    static bool comparator(OmicsCell _l, OmicsCell _r) { // returns which cell is first in schema order
       auto l = _l.coords;
       auto r = _r.coords;
       return (l[0] > r[0]) || (l[0] == r[0] && l[1] > r[1]);

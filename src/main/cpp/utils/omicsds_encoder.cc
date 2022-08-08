@@ -51,7 +51,23 @@ static std::map<uint8_t, std::string> decode_kind_of_organism = {{0, ""}, {1, "M
 
 static uint64_t eleven_digit_max = pow(10, 12);
 
+// backing map for encoding
+static std::unordered_map<std::string, gtf_encoding_t> encoding;
+
+bool find_encoding(std::string gtf_id, gtf_encoding_t& encoded_gtf) {
+  auto find = encoding.find(gtf_id);
+  if (find != encoding.end()) {
+    encoded_gtf = find->second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
 gtf_encoding_t encode_gtf_id(std::string gtf_id) {
+  gtf_encoding_t encoded_gtf;
+  if (find_encoding(gtf_id, encoded_gtf)) return encoded_gtf;
+
   std::regex pattern("^([A-Za-z]{4})([A-Za-z]*)(\\d{11})([.]*)(\\d*)$");
   std::smatch match;
   if (std::regex_match(gtf_id, match, pattern) && match.ready() && !match.empty() && match.size() == 6) {
@@ -61,8 +77,8 @@ gtf_encoding_t encode_gtf_id(std::string gtf_id) {
       uint8_t type_of_id = encode_id_type.at(match[1].str());
       uint8_t kind_of_organism = encode_kind_of_organism.at(match[2].str());
       assert(match[3].str().length() == 11);
-      uint64_t gtf_id = std::stoll(match[3].str());
-      assert(gtf_id < eleven_digit_max);
+      uint64_t gtf_oll = std::stoll(match[3].str());
+      assert(gtf_oll < eleven_digit_max);
       uint8_t version = 0;
       if (!match[4].str().empty()) {
         if (match[5].str().length() > 3) {
@@ -71,7 +87,12 @@ gtf_encoding_t encode_gtf_id(std::string gtf_id) {
         }
         version = std::stol(match[5].str());
       }
-      return { (uint64_t)kind_of_organism << 56 | (uint64_t)type_of_id << 48 | gtf_id, version};
+      encoding.insert({gtf_id, {(uint64_t)kind_of_organism << 56 | (uint64_t)type_of_id << 48 | gtf_oll, version}});
+      if (find_encoding(gtf_id, encoded_gtf)) {
+        return encoded_gtf;
+      } else {
+        logger.error("Could not find gtf id {} after insertion into internal map", gtf_id);
+      }
     } catch (const std::exception& ex) {
       logger.error("exception thrown {} : gtf id {} is not parseable", ex.what(), gtf_id);
     }
@@ -81,8 +102,23 @@ gtf_encoding_t encode_gtf_id(std::string gtf_id) {
   return {0, 0};
 }
 
+bool find_decoding(const gtf_encoding_t& encoded_gtf, std::string& gtf_id) {
+  auto find = std::find_if(encoding.begin(), encoding.end(),
+                           [&encoded_gtf](auto&& p) {
+                             return p.second.first == encoded_gtf.first && p.second.second == encoded_gtf.second;
+                           });
+  if (find != encoding.end()) {
+    gtf_id = find->first;
+    return true;
+  } else {
+    return false;
+  }
+}
+
 std::string decode_gtf_id(const gtf_encoding_t& encoded_id) {
   std::string gtf_id = "";
+  if (find_decoding(encoded_id, gtf_id)) return gtf_id;
+
   try {
     gtf_id = decode_id_type.at((uint64_t)encoded_id.first >> 48 & 0xFF)
                      + decode_kind_of_organism.at((uint64_t)encoded_id.first >> 56 & 0xFF)
@@ -90,8 +126,10 @@ std::string decode_gtf_id(const gtf_encoding_t& encoded_id) {
     if (encoded_id.second) {
       gtf_id += logger.format(".{}", encoded_id.second);
     }
+    encoding.insert({gtf_id, encoded_id});
   } catch (const std::exception& ex) {
     logger.error("exception thrown {} : encoded gtf id {} could not be decoded", ex.what(), encoded_id.first);
   }
+
   return gtf_id;
 }
