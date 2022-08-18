@@ -59,7 +59,7 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range, std::array<int64_
   size_t a1_size = 0;
   while(!tiledb_array_iterator_end(tiledb_array_it)) {
     int i = -1;
-    std::cout << std::endl << std::endl << "New cell" << std::endl;
+    //    std::cout << std::endl << std::endl << "New cell" << std::endl;
     for(auto& a : m_schema->attributes) {
       ++i;
       // Get value
@@ -72,11 +72,11 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range, std::array<int64_
       data[i].data = std::vector<uint8_t>(a1_v, a1_v + a1_size);
 
       // Print value (if not a deletion)
-      if(*a1_v != TILEDB_EMPTY_INT8) { 
+      /* if(*a1_v != TILEDB_EMPTY_INT8) { 
         std::cout << "attribute " << a.first << std::endl;
         printf("%3d\n", *a1_v);
         std::cout << a.first << " size " << a1_size << std::endl;
-      }
+        }*/
     }
 
 
@@ -92,10 +92,10 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range, std::array<int64_
     coords = m_schema->swap_order(coords);
 
     // Print value (if not a deletion)
-    if(*coords_ptr != TILEDB_EMPTY_INT32) {
+    /* if(*coords_ptr != TILEDB_EMPTY_INT32) {
       std::cout << "coords " << coords_ptr[0] << ", " << coords_ptr[1] << ", " << coords_ptr[2] << std::endl;
       std::cout << "coords size " << a1_size << std::endl;
-    }
+      } */
 
     if(proc) {
       proc(coords, data); // argument function

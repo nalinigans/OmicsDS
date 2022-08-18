@@ -4,6 +4,8 @@
 
 #include <functional>
 
+typedef std::function<void (const std::array<uint64_t, 3>& coords, const std::vector<OmicsFieldData>& data)> process_function;
+
 // used to query from OmicsDS
 class OmicsExporter : public OmicsModule {
   public:
@@ -11,8 +13,10 @@ class OmicsExporter : public OmicsModule {
       deserialize_schema();
       tiledb_open_array(TILEDB_ARRAY_READ);
     }
-  
-    typedef std::function<void (const std::array<uint64_t, 3>& coords, const std::vector<OmicsFieldData>& data)> process_function;
+
+    virtual ~OmicsExporter() {
+    }
+
     // used to query given range
     // will use proc as callback if specified, otherwise will default to process
     void query(std::array<int64_t, 2> sample_range = {0, std::numeric_limits<int64_t>::max()}, std::array<int64_t, 2> position_range = {0, std::numeric_limits<int64_t>::max()}, process_function proc = 0);
