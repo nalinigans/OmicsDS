@@ -35,28 +35,38 @@
 
 // common base class for OmicsLoader and OmicsExporter with various common functionalities
 class OmicsModule {
-  public:
-    OmicsModule(const std::string& workspace, const std::string& array) : m_workspace(workspace), m_array(array) {}
-    OmicsModule(const std::string& workspace, const std::string& array, const std::string& mapping_file, bool position_major) : m_workspace(workspace), m_array(array), m_schema(std::make_shared<OmicsSchema>(mapping_file, position_major)) {}
-    void serialize_schema(std::string path) { m_schema->serialize(path); }
-    void serialize_schema() { serialize_schema(m_workspace + "/" + m_array + "/omics_schema"); }
-    void deserialize_schema(std::string path) { m_schema.reset(); m_schema = std::make_shared<OmicsSchema>(); m_schema->create_from_file(path); }
-    void deserialize_schema() { deserialize_schema(m_workspace + "/" + m_array + "/omics_schema"); };
+ public:
+  OmicsModule(const std::string& workspace, const std::string& array)
+      : m_workspace(workspace), m_array(array) {}
+  OmicsModule(const std::string& workspace, const std::string& array,
+              const std::string& mapping_file, bool position_major)
+      : m_workspace(workspace),
+        m_array(array),
+        m_schema(std::make_shared<OmicsSchema>(mapping_file, position_major)) {}
+  void serialize_schema(std::string path) { m_schema->serialize(path); }
+  void serialize_schema() { serialize_schema(m_workspace + "/" + m_array + "/omics_schema"); }
+  void deserialize_schema(std::string path) {
+    m_schema.reset();
+    m_schema = std::make_shared<OmicsSchema>();
+    m_schema->create_from_file(path);
+  }
+  void deserialize_schema() { deserialize_schema(m_workspace + "/" + m_array + "/omics_schema"); };
 
-  protected:
-    std::string m_workspace;
-    std::string m_array;
-    // tiledb* functions return tiledb return code
-    int tiledb_create_array(const std::string& workspace, const std::string& array_name, const OmicsSchema& schema);
-    int tiledb_create_array() { return tiledb_create_array(m_workspace, m_array, *m_schema); }
-    int tiledb_open_array(const std::string& workspace, const std::string& array_name, int mode=TILEDB_ARRAY_WRITE);
-    int tiledb_open_array(int mode=TILEDB_ARRAY_WRITE) { return tiledb_open_array(m_workspace, m_array, mode); }
-    int tiledb_close_array();
-    TileDB_CTX* m_tiledb_ctx;
-    TileDB_Array* m_tiledb_array;
-    std::shared_ptr<OmicsSchema> m_schema;
-    int m_array_descriptor;
+ protected:
+  std::string m_workspace;
+  std::string m_array;
+  // tiledb* functions return tiledb return code
+  int tiledb_create_array(const std::string& workspace, const std::string& array_name,
+                          const OmicsSchema& schema);
+  int tiledb_create_array() { return tiledb_create_array(m_workspace, m_array, *m_schema); }
+  int tiledb_open_array(const std::string& workspace, const std::string& array_name,
+                        int mode = TILEDB_ARRAY_WRITE);
+  int tiledb_open_array(int mode = TILEDB_ARRAY_WRITE) {
+    return tiledb_open_array(m_workspace, m_array, mode);
+  }
+  int tiledb_close_array();
+  TileDB_CTX* m_tiledb_ctx;
+  TileDB_Array* m_tiledb_array;
+  std::shared_ptr<OmicsSchema> m_schema;
+  int m_array_descriptor;
 };
-
-
-

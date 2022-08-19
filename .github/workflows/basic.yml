@@ -39,7 +39,21 @@ env:
   CMAKE_BUILD_DIR: ${{github.workspace}}/build
 
 jobs:
+  lint-cpp:
+    name: Lint C++
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check C++ Formatting
+        working-directory: ${{github.workspace}}
+        run: |
+          sudo apt update -qq
+          sudo apt install -y clang-format
+          .github/scripts/clang_format.sh
+
   build:
+    name: Main Build
+    needs: lint-cpp
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
@@ -61,7 +75,7 @@ jobs:
       shell: bash
       working-directory: ${{env.CMAKE_BUILD_DIR}}
       run: |
-        sudo apt-get update
+        sudo apt-get update -qq
         sudo apt-get -y install cmake lcov
         sudo apt-get -y install zlib1g-dev libssl-dev uuid-dev libcurl4-openssl-dev zstd
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME
@@ -114,6 +128,7 @@ jobs:
       uses: codecov/codecov-action@v1
 
   r-build:
+    name: R Build
     needs: build
     runs-on: ubuntu-latest
     env:

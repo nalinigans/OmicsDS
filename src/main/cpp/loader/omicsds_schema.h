@@ -32,8 +32,8 @@
 #include <memory>
 #include <string>
 #include <type_traits>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "tiledb_constants.h"
 #include "tiledb_utils.h"
@@ -41,18 +41,18 @@
 #include "omicsds_file_utils.h"
 
 #define CHECK_RC(...)                                      \
-do {                                                       \
-  int rc = __VA_ARGS__;                                    \
-  if (rc) {                                                \
-    printf("%s", &tiledb_errmsg[0]);                       \
-    printf("[Examples::%s] Runtime Error.\n", __FILE__);   \
-    return rc;                                             \
-  }                                                        \
-} while (false)
+  do {                                                     \
+    int rc = __VA_ARGS__;                                  \
+    if (rc) {                                              \
+      printf("%s", &tiledb_errmsg[0]);                     \
+      printf("[Examples::%s] Runtime Error.\n", __FILE__); \
+      return rc;                                           \
+    }                                                      \
+  } while (false)
 
 // datastructure that keeps contigs sorted by name and position
 class GenomicMap {
-public:
+ public:
   GenomicMap() {}
   // construct from file at path mapping_file
   GenomicMap(const std::string& mapping_file);
@@ -73,16 +73,18 @@ public:
     uint64_t length;
     uint64_t starting_index;
 
-    contig(const std::string& name, uint64_t length, uint64_t starting_index): name(name), length(length), starting_index(starting_index) {}
+    contig(const std::string& name, uint64_t length, uint64_t starting_index)
+        : name(name), length(length), starting_index(starting_index) {}
     // serialize individual contig
     // used by GenomicMap::serialize
     void serialize(std::string path) {
-      std::string str = name + "\t" + std::to_string(length) + "\t" + std::to_string(starting_index) + "\n";
+      std::string str =
+          name + "\t" + std::to_string(length) + "\t" + std::to_string(starting_index) + "\n";
       FileUtility::write_file(path, str);
     }
   };
 
-private:
+ private:
   std::shared_ptr<FileUtility> m_mapping_reader;
   std::vector<contig> contigs;
   // indices from GenomicMap::contigs sorted by contig name
@@ -96,108 +98,171 @@ private:
 // struct to store type/length information about fields
 // also provides utility fucntions to go to/from string/tiledb types
 struct OmicsFieldInfo {
-  enum OmicsFieldType { omics_char, omics_uint8_t, omics_int8_t,
-                        omics_uint16_t, omics_int16_t, omics_uint32_t,
-                        omics_int32_t, omics_uint64_t, omics_int64_t, omics_float_t };
+  enum OmicsFieldType {
+    omics_char,
+    omics_uint8_t,
+    omics_int8_t,
+    omics_uint16_t,
+    omics_int16_t,
+    omics_uint32_t,
+    omics_int32_t,
+    omics_uint64_t,
+    omics_int64_t,
+    omics_float_t
+  };
 
   // OmicsFieldInfo treats negative lengths as variable
   OmicsFieldInfo(OmicsFieldType type, int _length) : type(type) {
-    if(_length < 0) {
+    if (_length < 0) {
       length = TILEDB_VAR_NUM;
-    }
-    else {
+    } else {
       length = _length;
     }
   }
-  
+
   // string constructor, used when deserializing human readable schema
   OmicsFieldInfo(const std::string& stype, int _length) {
-    if(_length < 0) {
+    if (_length < 0) {
       length = TILEDB_VAR_NUM;
-    }
-    else {
+    } else {
       length = _length;
     }
-    if(stype == "omics_char") { type = omics_char; return; }
-    if(stype == "omics_uint8_t") { type = omics_uint8_t; return; }
-    if(stype == "omics_int8_t") { type = omics_int8_t; return; }
-    if(stype == "omics_uint16_t") { type = omics_uint16_t; return; }
-    if(stype == "omics_int16_t") { type = omics_int16_t; return; }
-    if(stype == "omics_uint32_t") { type = omics_uint32_t; return; }
-    if(stype == "omics_int32_t") { type = omics_int32_t; return; }
-    if(stype == "omics_uint64_t") { type = omics_uint64_t; return; }
-    if(stype == "omics_int64_t") { type = omics_int64_t; return; }
-    if(stype == "omics_float_t") { type = omics_float_t; return; }
+    if (stype == "omics_char") {
+      type = omics_char;
+      return;
+    }
+    if (stype == "omics_uint8_t") {
+      type = omics_uint8_t;
+      return;
+    }
+    if (stype == "omics_int8_t") {
+      type = omics_int8_t;
+      return;
+    }
+    if (stype == "omics_uint16_t") {
+      type = omics_uint16_t;
+      return;
+    }
+    if (stype == "omics_int16_t") {
+      type = omics_int16_t;
+      return;
+    }
+    if (stype == "omics_uint32_t") {
+      type = omics_uint32_t;
+      return;
+    }
+    if (stype == "omics_int32_t") {
+      type = omics_int32_t;
+      return;
+    }
+    if (stype == "omics_uint64_t") {
+      type = omics_uint64_t;
+      return;
+    }
+    if (stype == "omics_int64_t") {
+      type = omics_int64_t;
+      return;
+    }
+    if (stype == "omics_float_t") {
+      type = omics_float_t;
+      return;
+    }
     type = omics_uint8_t;
     return;
   }
 
   OmicsFieldType type;
-  int length; // number of elements, -1 encodes variable
+  int length;  // number of elements, -1 encodes variable
 
   int tiledb_type() const {
-    switch(type) {
-      case omics_char:     return TILEDB_CHAR;
-      case omics_uint8_t:  return TILEDB_UINT8;
-      case omics_int8_t:   return TILEDB_INT8;
-      case omics_uint16_t: return TILEDB_UINT16;
-      case omics_int16_t:  return TILEDB_INT16;
-      case omics_uint32_t: return TILEDB_UINT32;
-      case omics_int32_t:  return TILEDB_INT32;
-      case omics_uint64_t: return TILEDB_UINT64;
-      case omics_int64_t:  return TILEDB_INT64;
-      case omics_float_t:  return TILEDB_FLOAT32;
+    switch (type) {
+      case omics_char:
+        return TILEDB_CHAR;
+      case omics_uint8_t:
+        return TILEDB_UINT8;
+      case omics_int8_t:
+        return TILEDB_INT8;
+      case omics_uint16_t:
+        return TILEDB_UINT16;
+      case omics_int16_t:
+        return TILEDB_INT16;
+      case omics_uint32_t:
+        return TILEDB_UINT32;
+      case omics_int32_t:
+        return TILEDB_INT32;
+      case omics_uint64_t:
+        return TILEDB_UINT64;
+      case omics_int64_t:
+        return TILEDB_INT64;
+      case omics_float_t:
+        return TILEDB_FLOAT32;
     }
     return TILEDB_CHAR;
   }
 
   // used to serialize schema
   std::string type_to_string() const {
-    switch(type) {
-      case omics_char:     return "omics_char";
-      case omics_uint8_t:  return "omics_uint8_t";
-      case omics_int8_t:   return "omics_int8_t";
-      case omics_uint16_t: return "omics_uint16_t";
-      case omics_int16_t:  return "omics_int16_t";
-      case omics_uint32_t: return "omics_uint32_t";
-      case omics_int32_t:  return "omics_int32_t";
-      case omics_uint64_t: return "omics_uint64_t";
-      case omics_int64_t:  return "omics_int64_t";
-      case omics_float_t:  return "omics_float_t";
+    switch (type) {
+      case omics_char:
+        return "omics_char";
+      case omics_uint8_t:
+        return "omics_uint8_t";
+      case omics_int8_t:
+        return "omics_int8_t";
+      case omics_uint16_t:
+        return "omics_uint16_t";
+      case omics_int16_t:
+        return "omics_int16_t";
+      case omics_uint32_t:
+        return "omics_uint32_t";
+      case omics_int32_t:
+        return "omics_int32_t";
+      case omics_uint64_t:
+        return "omics_uint64_t";
+      case omics_int64_t:
+        return "omics_int64_t";
+      case omics_float_t:
+        return "omics_float_t";
     }
     return "unknown_type";
   }
 
   std::string length_to_string() const {
-    if(length == TILEDB_VAR_NUM) {
+    if (length == TILEDB_VAR_NUM) {
       return "variable";
     }
     return std::to_string(length);
   }
 
   size_t element_size() {
-    switch(type) {
-      case omics_char:     return 1;
-      case omics_uint8_t:  return 1;
-      case omics_int8_t:   return 1;
-      case omics_uint16_t: return 2;
-      case omics_int16_t:  return 2;
-      case omics_uint32_t: return 4;
-      case omics_int32_t:  return 4;
-      case omics_uint64_t: return 8;
-      case omics_int64_t:  return 8;
-      case omics_float_t:  return 4;
+    switch (type) {
+      case omics_char:
+        return 1;
+      case omics_uint8_t:
+        return 1;
+      case omics_int8_t:
+        return 1;
+      case omics_uint16_t:
+        return 2;
+      case omics_int16_t:
+        return 2;
+      case omics_uint32_t:
+        return 4;
+      case omics_int32_t:
+        return 4;
+      case omics_uint64_t:
+        return 8;
+      case omics_int64_t:
+        return 8;
+      case omics_float_t:
+        return 4;
     }
     return 1;
   }
 
-  bool is_variable() {
-    return length == TILEDB_VAR_NUM;
-  }
+  bool is_variable() { return length == TILEDB_VAR_NUM; }
 
-  bool operator==(const OmicsFieldInfo& o) {
-    return type == o.type && length == o.length;
-  }
+  bool operator==(const OmicsFieldInfo& o) { return type == o.type && length == o.length; }
 };
 
 // schema for array
@@ -207,25 +272,26 @@ struct OmicsSchema {
   OmicsStorageOrder order;
 
   OmicsSchema() {}
-  OmicsSchema(const std::string& mapping_file, OmicsStorageOrder order = POSITION_MAJOR): genomic_map(mapping_file), order(order) {}
-  OmicsSchema(const std::string& mapping_file, bool position_major = true): genomic_map(mapping_file) {
+  OmicsSchema(const std::string& mapping_file, OmicsStorageOrder order = POSITION_MAJOR)
+      : genomic_map(mapping_file), order(order) {}
+  OmicsSchema(const std::string& mapping_file, bool position_major = true)
+      : genomic_map(mapping_file) {
     order = position_major ? POSITION_MAJOR : SAMPLE_MAJOR;
   }
   bool create_from_file(const std::string& path);
-  bool position_major() const {
-    return order == POSITION_MAJOR;
-  }
+  bool position_major() const { return order == POSITION_MAJOR; }
   // swaps between standard and schema order
   // standard order is SAMPLE, POSITION, will swap if position major
-  template<class T, size_t U>
+  template <class T, size_t U>
   std::array<T, U> swap_order(const std::array<T, U>& coords) {
     std::array<T, U> retval = coords;
-    if(position_major()) {
+    if (position_major()) {
       std::swap(retval[0], retval[1]);
     }
     return retval;
   }
-  std::map<std::string, OmicsFieldInfo> attributes; // implies canonical order (lexicographically sorted by name)
+  std::map<std::string, OmicsFieldInfo>
+      attributes;  // implies canonical order (lexicographically sorted by name)
   GenomicMap genomic_map;
   void serialize(std::string path);
   // get index of attribute by name
@@ -238,14 +304,10 @@ bool equivalent_schema(const OmicsSchema& l, const OmicsSchema& r);
 // stores field data backed by vector
 struct OmicsFieldData {
   std::vector<uint8_t> data;
-  size_t size() const {
-    return data.size();
-  }
-  uint8_t operator[](size_t idx) {
-    return data[idx];
-  }
+  size_t size() const { return data.size(); }
+  uint8_t operator[](size_t idx) { return data[idx]; }
   // templated utilty function to insert elements of potentially more than one byte into vector
-  template<class T>
+  template <class T>
   static void push_back(std::vector<uint8_t>& v, const T& elem) {
     auto size = v.size();
     v.resize(v.size() + sizeof(elem));
@@ -253,37 +315,33 @@ struct OmicsFieldData {
     *ptr = elem;
   }
 
-  template<class T>
+  template <class T>
   void push_back(const T& elem) {
     push_back(data, elem);
   }
 
   // templated utility function to insert elements of integral types and of size length.
-  template<typename T>
+  template <typename T>
   void push_pointer_back(const T* elem_ptr, size_t length) {
     static_assert(std::is_integral<T>::value, "Only Integral types can be specified.");
-    for(auto i = 0ul; i < length; i++) {
-      push_back(*(elem_ptr+i));
+    for (auto i = 0ul; i < length; i++) {
+      push_back(*(elem_ptr + i));
     }
   }
-  
-  template<class T>
+
+  template <class T>
   const T* get_ptr() const {
     return (T*)data.data();
   }
-  template<class T>
+  template <class T>
   T get(size_t idx = 0) const {
-    if(!(idx < typed_size<T>())) {
+    if (!(idx < typed_size<T>())) {
       throw std::out_of_range("Index out of range.");
     }
     return ((T*)data.data())[idx];
   }
-  template<class T>
+  template <class T>
   size_t typed_size() const {
     return data.size() / sizeof(T);
   }
 };
-
-
-
-

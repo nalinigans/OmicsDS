@@ -4,7 +4,7 @@
  * @section LICENSE
  *
  * The MIT License
- * 
+ *
  * @copyright Copyright (c) 2022 Omics Data Automation, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,7 +24,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- * 
+ *
  * @section DESCRIPTION
  *
  * Test gtf ids encoding and decoding
@@ -33,7 +33,6 @@
 #include <catch2/catch.hpp>
 
 #include "omicsds_encoder.h"
-
 
 TEST_CASE("test encoder", "[test_encoder]") {
   std::string gtf_id = "ENST00000456328";
@@ -54,14 +53,14 @@ TEST_CASE("test encoder", "[test_encoder]") {
 
   gtf_id = "ENSG00000456328.111";
   encoded = encode_gtf_id(gtf_id);
-  CHECK(encoded.first == ((uint64_t)(/*encode_id_type["ENSE"]*/1) << 48 | 456328));
+  CHECK(encoded.first == ((uint64_t)(/*encode_id_type["ENSE"]*/ 1) << 48 | 456328));
   CHECK(encoded.second == 111);
   CHECK(decode_gtf_id(encoded) == gtf_id);
 
   gtf_id = "ENSEMU00000456328.111";
   encoded = encode_gtf_id(gtf_id);
-  CHECK(encoded.first == ((uint64_t)(/*encode_id_type["ENSE"]*/2) << 48
-                          | (uint64_t)(/*encode_kind_of_organism["MU"]*/1) << 56 | 456328));
+  CHECK(encoded.first == ((uint64_t)(/*encode_id_type["ENSE"]*/ 2) << 48 |
+                          (uint64_t)(/*encode_kind_of_organism["MU"]*/ 1) << 56 | 456328));
   CHECK(encoded.second == 111);
   CHECK(decode_gtf_id(encoded) == gtf_id);
 

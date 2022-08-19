@@ -30,7 +30,7 @@
  *
  **/
 
-/** 
+/**
  * <package>_types.h(omicsds_types.h) gets automatically included in RcppExports.cpp
  */
 #ifndef R_OMICSDS_TYPES_H

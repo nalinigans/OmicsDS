@@ -4,7 +4,7 @@
  * @section LICENSE
  *
  * The MIT License
- * 
+ *
  * @copyright Copyright (c) 2022 Omics Data Automation, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,7 +24,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- * 
+ *
  * @section DESCRIPTION
  *
  * Implementation for encoding and decoding utilities for ids from gtf files
@@ -36,10 +36,11 @@
 #include <cmath>
 #include <regex>
 
-/** 
- * The gene/transcript ids in the Homo_sapiens.GRCh37.87.gtf seem to follow a pattern. e.g. ENSG00000223972 for gene_id,
- * ENST00000456328 for transcript id, ENSE00002234944 for exon_id, etc. The assumption here is that the pattern is a 
- * sequence of letters followed by 11 digits and a version for ids in the matrix files 
+/**
+ * The gene/transcript ids in the Homo_sapiens.GRCh37.87.gtf seem to follow a pattern. e.g.
+ * ENSG00000223972 for gene_id, ENST00000456328 for transcript id, ENSE00002234944 for exon_id, etc.
+ * The assumption here is that the pattern is a sequence of letters followed by 11 digits and a
+ * version for ids in the matrix files
  */
 
 // For fast lookup
@@ -70,7 +71,8 @@ gtf_encoding_t encode_gtf_id(std::string gtf_id) {
 
   std::regex pattern("^([A-Za-z]{4})([A-Za-z]*)(\\d{11})([.]*)(\\d*)$");
   std::smatch match;
-  if (std::regex_match(gtf_id, match, pattern) && match.ready() && !match.empty() && match.size() == 6) {
+  if (std::regex_match(gtf_id, match, pattern) && match.ready() && !match.empty() &&
+      match.size() == 6) {
     // The first sub_match is the whole string
     assert(gtf_id == match[0].str());
     try {
@@ -82,12 +84,15 @@ gtf_encoding_t encode_gtf_id(std::string gtf_id) {
       uint8_t version = 0;
       if (!match[4].str().empty()) {
         if (match[5].str().length() > 3) {
-          logger.error("The version in gtf id {} is not parseable with the current algorithm", gtf_id);
+          logger.error("The version in gtf id {} is not parseable with the current algorithm",
+                       gtf_id);
           return {0, 0};
         }
         version = std::stol(match[5].str());
       }
-      encoding.insert({gtf_id, {(uint64_t)kind_of_organism << 56 | (uint64_t)type_of_id << 48 | gtf_oll, version}});
+      encoding.insert(
+          {gtf_id,
+           {(uint64_t)kind_of_organism << 56 | (uint64_t)type_of_id << 48 | gtf_oll, version}});
       if (find_encoding(gtf_id, encoded_gtf)) {
         return encoded_gtf;
       } else {
@@ -97,16 +102,15 @@ gtf_encoding_t encode_gtf_id(std::string gtf_id) {
       logger.error("exception thrown {} : gtf id {} is not parseable", ex.what(), gtf_id);
     }
   } else {
-    logger.error("The gtf id {} is not parseable with the current algorithm", gtf_id); 
+    logger.error("The gtf id {} is not parseable with the current algorithm", gtf_id);
   }
   return {0, 0};
 }
 
 bool find_decoding(const gtf_encoding_t& encoded_gtf, std::string& gtf_id) {
-  auto find = std::find_if(encoding.begin(), encoding.end(),
-                           [&encoded_gtf](auto&& p) {
-                             return p.second.first == encoded_gtf.first && p.second.second == encoded_gtf.second;
-                           });
+  auto find = std::find_if(encoding.begin(), encoding.end(), [&encoded_gtf](auto&& p) {
+    return p.second.first == encoded_gtf.first && p.second.second == encoded_gtf.second;
+  });
   if (find != encoding.end()) {
     gtf_id = find->first;
     return true;
@@ -120,15 +124,16 @@ std::string decode_gtf_id(const gtf_encoding_t& encoded_id) {
   if (find_decoding(encoded_id, gtf_id)) return gtf_id;
 
   try {
-    gtf_id = decode_id_type.at((uint64_t)encoded_id.first >> 48 & 0xFF)
-                     + decode_kind_of_organism.at((uint64_t)encoded_id.first >> 56 & 0xFF)
-                     + logger.format("{:011}", encoded_id.first & 0xFFFFFFFFFFF);
+    gtf_id = decode_id_type.at((uint64_t)encoded_id.first >> 48 & 0xFF) +
+             decode_kind_of_organism.at((uint64_t)encoded_id.first >> 56 & 0xFF) +
+             logger.format("{:011}", encoded_id.first & 0xFFFFFFFFFFF);
     if (encoded_id.second) {
       gtf_id += logger.format(".{}", encoded_id.second);
     }
     encoding.insert({gtf_id, encoded_id});
   } catch (const std::exception& ex) {
-    logger.error("exception thrown {} : encoded gtf id {} could not be decoded", ex.what(), encoded_id.first);
+    logger.error("exception thrown {} : encoded gtf id {} could not be decoded", ex.what(),
+                 encoded_id.first);
   }
 
   return gtf_id;

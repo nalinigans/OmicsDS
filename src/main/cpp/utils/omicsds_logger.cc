@@ -4,7 +4,7 @@
  * @section LICENSE
  *
  * The MIT License
- * 
+ *
  * @copyright Copyright (c) 2022 Omics Data Automation, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,7 +24,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- * 
+ *
  * @section DESCRIPTION
  *
  * This file implements the Logger class
@@ -66,23 +66,22 @@ Logger::Logger(std::shared_ptr<spdlog::logger> logger) {
   setup_string_logger();
 }
 
-Logger::Logger(std::shared_ptr<spdlog::logger> logger, std::shared_ptr<spdlog::logger> string_logger) {
+Logger::Logger(std::shared_ptr<spdlog::logger> logger,
+               std::shared_ptr<spdlog::logger> string_logger) {
   m_logger = logger;
   m_string_logger = string_logger;
 }
 
-Logger::~Logger() {
-  spdlog::drop_all();
-}
+Logger::~Logger() { spdlog::drop_all(); }
 
 void Logger::info(const std::string& msg, bool once_only) {
-  if (!once_only || not_been_logged(msg)) { 
+  if (!once_only || not_been_logged(msg)) {
     m_string_logger->info(msg.c_str());
   }
 }
 
 void Logger::debug(const std::string& msg, bool once_only) {
-  if (!once_only || not_been_logged(msg)) { 
+  if (!once_only || not_been_logged(msg)) {
     m_string_logger->debug(msg.c_str());
   }
 }
@@ -94,13 +93,13 @@ void Logger::debug_only(const std::string& msg, bool once_only) {
 }
 
 void Logger::warn(const std::string& msg, bool once_only) {
-  if (!once_only || not_been_logged(msg)) { 
+  if (!once_only || not_been_logged(msg)) {
     m_string_logger->warn(msg.c_str());
   }
 }
 
 void Logger::error(const std::string& msg, bool once_only) {
-  if (!once_only || not_been_logged(msg)) { 
+  if (!once_only || not_been_logged(msg)) {
     m_string_logger->error(msg.c_str());
   }
 }

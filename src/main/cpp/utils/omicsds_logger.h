@@ -4,7 +4,7 @@
  * @section LICENSE
  *
  * The MIT License
- * 
+ *
  * @copyright Copyright (c) 2022 Omics Data Automation, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,7 +24,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- * 
+ *
  * @section DESCRIPTION
  *
  * This file defines the Logger class
@@ -34,20 +34,21 @@
 
 // Override spdlog level names to upper case for consistency with log4j from Java
 #if !defined(SPDLOG_LEVEL_NAMES)
-#define SPDLOG_LEVEL_NAMES { "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF" }
+#define SPDLOG_LEVEL_NAMES \
+  { "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF" }
 #endif
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/fmt/fmt.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/spdlog.h>
 
-#include <exception>
 #include <execinfo.h>
+#include <exception>
 #include <list>
 #include <mutex>
 #include <sstream>
 
-//TODO: Prototype from TileDB/utils.h for now.
+// TODO: Prototype from TileDB/utils.h for now.
 bool is_env_set(const std::string& name);
 
 class Logger {
@@ -58,91 +59,93 @@ class Logger {
   ~Logger();
 
   /** Direct, formatless logging of messages */
-  void info(const std::string& msg, bool once_only=false);
-  void debug(const std::string& msg, bool once_only=false);
-  void debug_only(const std::string& msg, bool once_only=false);
-  void warn(const std::string& msg, bool once_only=false);
-  void error(const std::string& msg, bool once_only=false);
+  void info(const std::string& msg, bool once_only = false);
+  void debug(const std::string& msg, bool once_only = false);
+  void debug_only(const std::string& msg, bool once_only = false);
+  void warn(const std::string& msg, bool once_only = false);
+  void error(const std::string& msg, bool once_only = false);
 
   /* log4j pattern logging of messages */
-  template<typename... Args>
-  void info(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  void info(const char* fmt, const Args&... args) {
     m_logger->info(fmt, args...);
   }
 
-  template<typename... Args>
-  void debug(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  void debug(const char* fmt, const Args&... args) {
     m_logger->debug(fmt, args...);
   }
 
-  template<typename... Args>
-  void debug_only(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  void debug_only(const char* fmt, const Args&... args) {
 #ifdef DEBUG
     m_logger->debug(fmt, args...);
 #endif
   }
 
-  template<typename... Args>
-  void warn(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  void warn(const char* fmt, const Args&... args) {
     m_logger->warn(fmt, args...);
   }
 
-  template<typename... Args>
-  void error(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  void error(const char* fmt, const Args&... args) {
     m_logger->error(fmt, args...);
   }
 
 #define BACKTRACE_LENGTH 10
   void print_backtrace() {
     if (is_env_set("OMICSDS_PRINT_STACKTRACE")) {
-      void *buffer[BACKTRACE_LENGTH];
+      void* buffer[BACKTRACE_LENGTH];
       int nptrs = backtrace(buffer, BACKTRACE_LENGTH);
-      char **strings = backtrace_symbols(buffer, nptrs);
+      char** strings = backtrace_symbols(buffer, nptrs);
       m_logger->error("Native Stack Trace:");
       for (auto i = 1; i < nptrs; i++) {
-	m_string_logger->error(std::string("\t")+strings[i]);
+        m_string_logger->error(std::string("\t") + strings[i]);
       }
       free(strings);
     }
   }
 
-  template<typename T, typename... Args>
-  void fatal(const T& exception, const char* fmt, const Args &... args) {
-    static_assert(std::is_base_of<std::exception, T>::value, "Template class to fatal() must derive from std::exception");
+  template <typename T, typename... Args>
+  void fatal(const T& exception, const char* fmt, const Args&... args) {
+    static_assert(std::is_base_of<std::exception, T>::value,
+                  "Template class to fatal() must derive from std::exception");
     m_logger->error(fmt, args...);
     print_backtrace();
     throw exception;
   }
 
-  template<typename T>
+  template <typename T>
   void fatal(const T& exception) {
-    static_assert(std::is_base_of<std::exception, T>::value, "Template class to fatal() must derive from std::exception");
+    static_assert(std::is_base_of<std::exception, T>::value,
+                  "Template class to fatal() must derive from std::exception");
     m_logger->error(exception.what());
     print_backtrace();
     throw exception;
   }
 
-  template<typename... Args>
-  void info_once(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  void info_once(const char* fmt, const Args&... args) {
     if (not_been_logged(format(fmt, args...))) {
       m_logger->info(fmt, args...);
     }
   }
 
-  template<typename... Args>
-  void warn_once(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  void warn_once(const char* fmt, const Args&... args) {
     if (not_been_logged(format(fmt, args...))) {
       m_logger->warn(fmt, args...);
     }
   }
 
-  template<typename... Args>
-  const std::string format(const char* fmt, const Args &... args) {
+  template <typename... Args>
+  const std::string format(const char* fmt, const Args&... args) {
     return fmt::format(fmt, args...);
   }
 
   static std::shared_ptr<spdlog::logger> get_logger(const std::string& name);
-  
+
  private:
   std::shared_ptr<spdlog::logger> m_logger;
   std::shared_ptr<spdlog::logger> m_string_logger;
@@ -155,4 +158,3 @@ class Logger {
 
 /** Global thread safe logger */
 extern Logger logger;
-
