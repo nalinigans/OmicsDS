@@ -3,10 +3,22 @@ title: "Experimental OmicsDS interface in R"
 description: "This document describes the interface to the OmicsDS C++ library in R and reviews the patterns and conventions of the R package."
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{OmicsDS interface in R}
+  %\VignetteIndexEntry{omicds}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(omicsds)
+print(omicsds::version())
+```
 
 This is work in progress. The `OmicsDS` C++ library allows for ingestion and export of feature-level matrix, interval-level and SAM Omics data into its data store. The `omicsds` package provides an R query interface into this C++ library.
 

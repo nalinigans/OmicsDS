@@ -56,7 +56,7 @@ OMICSDS_LIBS="${OMICSDS_LIBS} -Wl,-rpath,${OMICSDS_INSTALL_PATH}/lib"
 
 # Check existence of OMICSDS_INSTALL_PATH
 AS_IF([test "unset$OMICSDS_INSTALL_PATH" = "unset"],
-      [AC_MSG_ERROR([Omicsds installation not found.
+      [AC_MSG_ERROR([OmicsDS installation not found.
         Invoke with either \$OMICSDS_HOME env set to the installation path or
         by explicitly specifying the path with the --with-omicsds argument])])
 

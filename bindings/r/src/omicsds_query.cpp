@@ -67,15 +67,20 @@ Rcpp::CharacterVector version() {
   return OmicsDS::version();
 }
 
+//' Connect to an OmicsDS workspace/array
+//'
 //' Get a handle to an OmicsDS instance given a workspace/array
 //' Calling disconnect will release resources held
 //' by the native OmicsDS.
 //'
-//' @param workspace
-//' @param array
+//' @param workspace path to an OmicsDS workspace
+//' @param array name of the array in the OmicsDS workspace
+//' @return handle representation of the OmicsDS instance for the given workspace and array
 //' @export
 //' @examples
+//' \dontrun{
 //' omicsds_handle <- omicsds::connect(workspace="~/feature-level-ws", array="18K_samples")
+//' }
 //'
 // [[Rcpp::export]]
 size_t connect(const std::string& workspace, const std::string& array) {
@@ -83,13 +88,18 @@ size_t connect(const std::string& workspace, const std::string& array) {
   return OmicsDS::connect(workspace, array);
 }
 
+//' Disconnect from an OmicsDS workspace/array
+//'
 //' Disconnect from a given OmicsDS instance to release resources held by the
 //' instance.
 //'
-//' @param handle
+//' @param handle OmicsDS instance representation for a workspace/array
 //' @export
 //' @examples
+//' \dontrun{
+//' omicsds_handle <- omicsds::connect(workspace="~/feature-level-ws", array="18K_samples")
 //' omicsds::disconnect(omicsds_handle)
+//' }
 //'
 // [[Rcpp::export]]
 void disconnect(size_t handle) {
@@ -175,20 +185,26 @@ class RFeatureProcessor {
   std::unordered_map<uint64_t, std::vector<float>> m_feature_scores;
 };
 
+//' Slice OmicsDS array by features/samples
+//'
 //' Get a slice as a DataFrame from an OmicsDS instance referenced by handle,
 //' given features and a sample range. Features and sample range can be
 //' NULL, in which case all features and/or samples are returned from
 //' OmicsDS.
 //'
-//' @param handle
-//' @param features
-//' @param sample_range
+//' @param handle OmicsDS instance representation for a workspace/array
+//' @param features slice by list of features or NULL for all features
+//' @param sample_range slice by sample range or NULL for all samples
+//' @return R data.frame for the OmicsDS workspace array sliced by features/samples
 //' @export
 //' @examples
+//' \dontrun{
+//' omicsds_handle <- omicsds::connect(workspace="~/feature-level-ws", array="18K_samples")
 //' df <- omicsds::query_features(handle=omicsds_handle, features=c("ENSG00000138190", "ENSG00000243485"), sample_range=c(0, 2))
 //' df1 <- omicsds::query_features(handle=omicsds_handle, features=NULL, sample_range=c(0, 2))
-//' df2 <- omicsds::query_features(handle=omicsds_handle, features=c{"ENSG00000138190"}, sample_range=NULL)
+//' df2 <- omicsds::query_features(handle=omicsds_handle, features=c("ENSG00000138190"), sample_range=NULL)
 //' df3 <- omicsds::query_features(handle=omicsds_handle, features=NULL, sample_range=NULL)
+//' }
 // [[Rcpp::export]]
 Rcpp::DataFrame query_features(size_t handle, Rcpp::Nullable<Rcpp::CharacterVector> features = R_NilValue, Rcpp::Nullable<Rcpp::List> sample_range = R_NilValue) {
   std::vector<std::string> feature_vector;

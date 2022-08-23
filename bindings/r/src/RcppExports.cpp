@@ -56,33 +56,12 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rcpp_hello_world
-List rcpp_hello_world();
-RcppExport SEXP _omicsds_rcpp_hello_world() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_hello_world());
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_vector_access1
-void rcpp_vector_access1();
-RcppExport SEXP _omicsds_rcpp_vector_access1() {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_vector_access1();
-    return R_NilValue;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_omicsds_version", (DL_FUNC) &_omicsds_version, 0},
     {"_omicsds_connect", (DL_FUNC) &_omicsds_connect, 2},
     {"_omicsds_disconnect", (DL_FUNC) &_omicsds_disconnect, 1},
     {"_omicsds_query_features", (DL_FUNC) &_omicsds_query_features, 3},
-    {"_omicsds_rcpp_hello_world", (DL_FUNC) &_omicsds_rcpp_hello_world, 0},
-    {"_omicsds_rcpp_vector_access1", (DL_FUNC) &_omicsds_rcpp_vector_access1, 0},
     {NULL, NULL, 0}
 };
 

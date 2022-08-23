@@ -2,6 +2,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+/* !!!!JUST EXAMPLES!!!!
 // [[Rcpp::export]]
 List rcpp_hello_world() {
 
@@ -49,3 +50,4 @@ void rcpp_vector_access1(){
 
   Rcpp::Rcout << v << std::endl;
 }
+*/

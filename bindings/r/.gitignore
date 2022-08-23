@@ -59,3 +59,4 @@ GenomicsDB-R.Rproj
 
 #Ignore SAIGE for now
 SAIGE
+inst/doc

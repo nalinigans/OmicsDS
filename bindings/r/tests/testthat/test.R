@@ -9,7 +9,8 @@ test_that("version is valid", {
 
 test_that("test that omicsds connects to an existing workspace for queries", {
     print(getwd())
-    root_dir <- Sys.getenv(c("GITHUB_WORKSPACE"), unset="../../../..")
+    omicsds_repository <- Sys.getenv(c("OMICSDS_REPOSITORY"), unset="../../../..")
+    root_dir <- Sys.getenv(c("GITHUB_WORKSPACE"), omicsds_repository)
     omicsds_handle <- omicsds::connect(workspace=paste(root_dir, "src/test/inputs/feature-level-ws", sep="/"), array="array")
     df <- omicsds::query_features(handle=omicsds_handle, features=c("ENSG00000138190", "ENSG00000243485"), sample_range=c(0, 2))
     omicsds::disconnect(handle=omicsds_handle)
