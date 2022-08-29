@@ -32,6 +32,9 @@
 
 #include "omicsds_cli.h"
 #include "omicsds_logger.h"
+#include "omicsds_samplemap.h"
+
+#include <iostream>
 
 ACTION get_action(int argc, char* argv[]) {
   if (argc < 2) {
@@ -89,4 +92,39 @@ std::string LongOptions::optstring() {
     if (it->has_arg == required_argument) optstring.append(":");
   }
   return optstring;
+}
+
+void MatrixFileProcessor::set_inverse_sample_map(std::string_view sample_map_file) {
+  m_inverse_sample_map = SampleMap(sample_map_file.data()).invert_sample_map(true);
+}
+
+void MatrixFileProcessor::process(const std::string& feature_id, uint64_t sample_id, float score) {
+  if (m_first_entry) {
+    *m_output_stream << "SAMPLE";
+    m_prev_feature_id = feature_id;
+    m_first_entry = false;
+  }
+  if (m_prev_feature_id != feature_id) {
+    if (m_first_row) {
+      *m_output_stream << "\n" << m_prev_feature_id;
+      for (float score : m_scores) {
+        *m_output_stream << "\t" << score;
+      }
+      m_first_row = false;
+      m_scores.clear();  // Free up fields now that we don't need them
+      m_inverse_sample_map = NULL;
+    }
+    *m_output_stream << "\n" << feature_id;
+    m_prev_feature_id = feature_id;
+  }
+  if (m_first_row) {
+    m_scores.emplace_back(score);
+    if (m_inverse_sample_map != NULL) {
+      *m_output_stream << "\t" << m_inverse_sample_map->at(sample_id);
+    } else {
+      *m_output_stream << "\t" << sample_id;
+    }
+  } else {
+    *m_output_stream << "\t" << score;
+  }
 }

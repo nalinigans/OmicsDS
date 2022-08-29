@@ -33,7 +33,6 @@
 #include <catch2/catch.hpp>
 
 #include "omicsds_cli.h"
-#include "omicsds_loader.h"
 #include "omicsds_logger.h"
 
 #define ARGC(arr) sizeof(arr) / sizeof(char*)
@@ -136,5 +135,30 @@ TEST_CASE("test CLI", "[cli]") {
     check_option(options[2], opt3);
     check_option(options[3], opt4);
     REQUIRE(lo.optstring() == "o:p:nt");
+  }
+}
+
+TEST_CASE("test MatrixFileProcessor", "[cli query matrix]") {
+  SECTION("test matrix file process", "[cli query matrix]") {
+    std::stringstream output;
+    MatrixFileProcessor fp(&output);
+    fp.process("Feature 1", 0, 1.1);
+    fp.process("Feature 1", 1, 2.1);
+    fp.process("Feature 2", 0, 1.2);
+    fp.process("Feature 2", 1, 2.2);
+
+    REQUIRE(output.str() == "SAMPLE\t0\t1\nFeature 1\t1.1\t2.1\nFeature 2\t1.2\t2.2");
+  }
+
+  SECTION("test sample map", "[cli query matrix]") {
+    std::stringstream output;
+    MatrixFileProcessor fp(&output);
+    fp.set_inverse_sample_map(std::string(OMICSDS_TEST_INPUTS) + "small_map");
+    fp.process("Feature 1", 0, 1.1);
+    fp.process("Feature 1", 1, 2.1);
+    fp.process("Feature 2", 0, 1.2);
+    fp.process("Feature 2", 1, 2.2);
+
+    REQUIRE(output.str() == "SAMPLE\tSample0\tSample1\nFeature 1\t1.1\t2.1\nFeature 2\t1.2\t2.2");
   }
 }

@@ -24,30 +24,24 @@
 # THE SOFTWARE.
 #
 
+set(CLI_CPP_SOURCES
+  omicsds.cc
+  import.cc
+  query.cc
+  cli_utils.cc)
 
-include_directories(Catch INTERFACE ${CMAKE_SOURCE_DIR}/dependencies/Catch2/single_include)
+add_executable(omicsds ${CLI_CPP_SOURCES})
 
-set(CPP_INCLUDE_DIRS
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
+target_include_directories(omicsds PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/main/cpp/api
+  ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
+  ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
 
-set(LINK_DEPENDENCIES
-        omicsds_static
-        ${OMICSDS_DEPENDENCIES}
-        ${CMAKE_DL_LIBS})
+target_link_libraries(omicsds omicsds_static)
 
-set(CPP_TEST_SOURCES
-        test_omicsds_loader.cc
-        test_omics_field_data.cc
-        test_file_utility.cc
-        test_api.cc
-        test_logger.cc
-        test_encoder.cc)
-
-# ctests for library
-add_executable(ctests_lib ${CPP_TEST_SOURCES})
-target_include_directories(ctests_lib PRIVATE ${CPP_INCLUDE_DIRS})
-target_compile_definitions(ctests_lib PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
-target_link_libraries(ctests_lib ${LINK_DEPENDENCIES})
-add_test(ctests_lib ctests_lib -d yes)
+if(USE_GPERFTOOLS AND GPERFTOOLS_FOUND)
+  target_link_libraries(omicsds ${GPERFTOOLS_PROFILER_LIBRARY})
+endif()
+if(USE_GPERFTOOLS_HEAP AND GPERFTOOLS_FOUND)
+  target_link_libraries(omicsds ${GPERFTOOLS_HEAP_PROFILER_LIBRARY})
+endif()

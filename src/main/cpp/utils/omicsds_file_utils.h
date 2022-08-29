@@ -25,6 +25,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #define SLASHIFY(path) (path.back() != '/' ? path + '/' : path)
 #define UNSLASHIFY(path) (path.back() == '/' ? path.substr(0, path.length() - 2) : path)
 
@@ -61,3 +64,7 @@ struct FileUtility {
  private:
   size_t read_from_str_buffer(void* buffer, size_t chars_to_read);
 };
+
+// split str into tokens by sep
+// similar to java/python split
+std::vector<std::string> split(std::string str, std::string sep);

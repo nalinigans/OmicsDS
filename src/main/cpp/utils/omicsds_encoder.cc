@@ -55,6 +55,9 @@ static uint64_t eleven_digit_max = pow(10, 12);
 // backing map for encoding
 static std::unordered_map<std::string, gtf_encoding_t> encoding;
 
+// Cache the last decoded gtf_encoding_t
+static std::pair<gtf_encoding_t, std::string> last_decoding;
+
 bool find_encoding(std::string gtf_id, gtf_encoding_t& encoded_gtf) {
   auto find = encoding.find(gtf_id);
   if (find != encoding.end()) {
@@ -108,11 +111,8 @@ gtf_encoding_t encode_gtf_id(std::string gtf_id) {
 }
 
 bool find_decoding(const gtf_encoding_t& encoded_gtf, std::string& gtf_id) {
-  auto find = std::find_if(encoding.begin(), encoding.end(), [&encoded_gtf](auto&& p) {
-    return p.second.first == encoded_gtf.first && p.second.second == encoded_gtf.second;
-  });
-  if (find != encoding.end()) {
-    gtf_id = find->first;
+  if (last_decoding.first == encoded_gtf) {
+    gtf_id = last_decoding.second;
     return true;
   } else {
     return false;
@@ -131,6 +131,11 @@ std::string decode_gtf_id(const gtf_encoding_t& encoded_id) {
       gtf_id += logger.format(".{}", encoded_id.second);
     }
     encoding.insert({gtf_id, encoded_id});
+
+    if (encoded_id != last_decoding.first) {
+      last_decoding.first = encoded_id;
+      last_decoding.second = gtf_id;
+    }
   } catch (const std::exception& ex) {
     logger.error("exception thrown {} : encoded gtf id {} could not be decoded", ex.what(),
                  encoded_id.first);

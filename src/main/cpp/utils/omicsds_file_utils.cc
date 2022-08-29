@@ -106,3 +106,27 @@ size_t FileUtility::read_from_str_buffer(void* buffer, size_t chars_to_read) {
   str_buffer.erase(0, readable_chars);
   return readable_chars;
 }
+
+std::vector<std::string> split(std::string str, std::string sep) {
+  std::vector<std::string> retval;
+  size_t index;
+
+  if (str.length() >= 2) {
+    if (str[0] == '[') {
+      if (str[str.length() - 1] == ']') {
+        str = str.substr(1, str.length() - 2);
+      } else {
+        logger.error("String {} could not be split as there is no matching right bracket", str);
+        return retval;
+      }
+    }
+  }
+
+  while ((index = str.find_first_of(sep)) != std::string::npos) {
+    retval.push_back(str.substr(0, index));
+    str.erase(0, index + 1);
+  }
+  retval.push_back(str);
+
+  return retval;
+}

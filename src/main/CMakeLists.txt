@@ -41,6 +41,7 @@ set(OMICSDS_SOURCES
   ${OMICSDS_CPP}/utils/omicsds_encoder.cc
   ${OMICSDS_CPP}/utils/omicsds_logger.cc
   ${OMICSDS_CPP}/utils/omicsds_file_utils.cc
+  ${OMICSDS_CPP}/utils/omicsds_samplemap.cc
   ${OMICSDS_CPP}/api/omicsds.cc
   )
 

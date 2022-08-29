@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "omicsds_samplemap.h"
 #include "omicsds_schema.h"
 #include "omicsds_storage.h"
 
@@ -76,10 +77,6 @@ class OmicsDSStorageException : public std::exception {
 
 void read_sam_file(std::string filename);
 
-// split str into tokens by sep
-// similar to java/python split
-std::vector<std::string> split(std::string str, std::string sep);
-
 struct contig {
   std::string name;
   uint64_t length;
@@ -92,17 +89,6 @@ struct contig {
         name + "\t" + std::to_string(length) + "\t" + std::to_string(starting_index) + "\n";
     FileUtility::write_file(path, str);
   }
-};
-
-// maps from sample name to (logical) row in OmicsDS
-struct SampleMap {
-  std::map<std::string, size_t> map;
-  // file specifying SampleMap should be tab seperated with lines
-  // consisting of a single sample name and row index
-  SampleMap(const std::string& sample_map);
-  size_t& operator[](const std::string& name) { return map[name]; }
-  size_t count(const std::string& name) const { return map.count(name); }
-  size_t size() const { return map.size(); }
 };
 
 // Maps from gene name to chrom, start, end

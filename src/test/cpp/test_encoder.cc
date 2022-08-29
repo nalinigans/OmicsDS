@@ -47,7 +47,7 @@ TEST_CASE("test encoder", "[test_encoder]") {
   CHECK(find_encoding(gtf_id, encoded));
   CHECK(encoded.first == 456328);
   CHECK(encoded.second == 111);
-  CHECK(find_decoding(encoded, gtf_id));
+  CHECK(!find_decoding(encoded, gtf_id));
   CHECK(decode_gtf_id(encoded) == gtf_id);
   CHECK(find_decoding(encoded, gtf_id));
 

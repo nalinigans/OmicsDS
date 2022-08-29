@@ -33,30 +33,6 @@
 
 #include <tuple>
 
-std::vector<std::string> split(std::string str, std::string sep) {
-  std::vector<std::string> retval;
-  size_t index;
-
-  if (str.length() >= 2) {
-    if (str[0] == '[') {
-      if (str[str.length() - 1] == ']') {
-        str = str.substr(1, str.length() - 2);
-      } else {
-        logger.error("String {} could not be split as there is no matching right bracket", str);
-        return retval;
-      }
-    }
-  }
-
-  while ((index = str.find_first_of(sep)) != std::string::npos) {
-    retval.push_back(str.substr(0, index));
-    str.erase(0, index + 1);
-  }
-  retval.push_back(str);
-
-  return retval;
-}
-
 void read_sam_file(std::string filename) {
   std::cerr << "SAM file is " << filename << std::endl;
 
@@ -976,25 +952,6 @@ void MatrixLoader::create_schema() {
 void MatrixLoader::add_reader(const std::string& filename) {
   m_files.push_back(
       std::make_shared<MatrixReader>(filename, m_schema, m_sample_map, m_files.size()));
-}
-
-SampleMap::SampleMap(const std::string& sample_map) {
-  FileUtility file(sample_map);
-
-  std::string line;
-  while (file.generalized_getline(line)) {
-    auto toks = split(line, "\t");
-    if (toks.size() < 2) continue;
-    try {
-      std::string name = toks[0];
-      size_t idx = std::stoul(toks[1]);
-      if (!map.count(name)) {
-        map[name] = idx;
-      }
-    } catch (...) {
-      continue;
-    }
-  }
 }
 
 GeneIdMap::GeneIdMap(const std::string& gene_map, std::shared_ptr<OmicsSchema> schema,

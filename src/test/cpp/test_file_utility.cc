@@ -27,10 +27,8 @@
 #include <catch2/catch.hpp>
 #include "test_base.h"
 
-#include "omicsds_schema.h"
+#include "omicsds_file_utils.h"
 #include "tiledb_constants.h"
-
-std::vector<std::string> split(std::string str, std::string sep);
 
 TEST_CASE("test split", "[test_split]") {
   auto splits = split("foo\tfoo1", "\t");

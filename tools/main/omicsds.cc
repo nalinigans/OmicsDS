@@ -45,7 +45,7 @@ void print_action_usage() {
 
 int main(int argc, char* argv[]) {
 #ifdef USE_GPERFTOOLS
-  std::cout << "Profiling Started" << std::endl;
+  std::cerr << "Profiling Started" << std::endl;
   ProfilerStart("omicsds_import.gperf.prof");
 #endif
 #ifdef USE_GPERFTOOLS_HEAP

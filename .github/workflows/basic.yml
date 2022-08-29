@@ -56,7 +56,7 @@ jobs:
     needs: lint-cpp
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [macOS-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     env:
       OMICSDS_INSTALL_DIR: install-${{matrix.os}}

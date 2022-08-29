@@ -24,25 +24,5 @@
 # THE SOFTWARE.
 #
 
-set(CLI_CPP_SOURCES
-  omicds.cc
-  import.cc
-  query.cc
-  cli_utils.cc)
-
-add_executable(omicsds ${CLI_CPP_SOURCES})
-
-target_include_directories(omicsds PRIVATE
-  ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-  ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
-  ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
-
-target_link_libraries(omicsds omicsds_static)
-
-if(USE_GPERFTOOLS AND GPERFTOOLS_FOUND)
-  target_link_libraries(omicsds ${GPERFTOOLS_PROFILER_LIBRARY})
-endif()
-if(USE_GPERFTOOLS_HEAP AND GPERFTOOLS_FOUND)
-  target_link_libraries(omicsds ${GPERFTOOLS_HEAP_PROFILER_LIBRARY})
-endif()
-
+add_subdirectory(main)
+add_subdirectory(test)

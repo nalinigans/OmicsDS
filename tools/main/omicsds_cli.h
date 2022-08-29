@@ -34,8 +34,10 @@
 #include <getopt.h>
 
 #include <map>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 /* Enum for the actions a user can undertake, along with a sentinel value for failure. */
@@ -90,6 +92,24 @@ bool parse_args(int argc, char* argv[], const option* long_options, const char* 
  */
 bool get_option(const std::map<char, std::string_view>& opt_map, const char key,
                 std::string_view& option);
+
+/**
+ * Callback class for generating a matrix file from feature level array
+ */
+class MatrixFileProcessor {
+ public:
+  MatrixFileProcessor(std::ostream* output_stream) : m_output_stream(output_stream) {}
+  void process(const std::string& feature_id, uint64_t sample_id, float score);
+  void set_inverse_sample_map(std::string_view sample_map_file);
+
+ private:
+  std::ostream* m_output_stream;
+  bool m_first_row = true;
+  bool m_first_entry = true;
+  std::string m_prev_feature_id;
+  std::vector<float> m_scores;
+  std::shared_ptr<std::unordered_map<size_t, std::string>> m_inverse_sample_map = NULL;
+};
 
 /**
  * Main function for import logic

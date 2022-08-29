@@ -25,8 +25,10 @@
  **/
 #include <iostream>
 
+#include "omicsds.h"
 #include "omicsds_cli.h"
 #include "omicsds_export.h"
+#include "omicsds_samplemap.h"
 
 void print_query_usage() {
   std::cout << "Usage: omicsds query [options]\n"
@@ -36,6 +38,10 @@ void print_query_usage() {
                "include path to workspace)\n"
             << "\t \e[1m--generic\e[0m, \e[1m-g\e[0m Command to perform "
                "generic query. WIP. Output is probably not useful.\n"
+            << "\t \e[1m--export-matrix\e[0m, \e[1m-m\e[0m Command to generate "
+               "matrix file from array. Should only be used on data ingested via --feature-level.\n"
+            << "\t \e[1m--sample-map\e[0m, \e[1m-s\e[0m If given, the matrix file output by "
+               "providing the -m flag will have sample names rather than row id's.\n"
             << "\t \e[1m--export-sam\e[0m, \e[1m-e\e[0m Command to export data "
                "from query range as sam files, one per sample. Should only be "
                "used on data ingested via --read-level\n";
@@ -44,6 +50,8 @@ void print_query_usage() {
 int query_main(int argc, char* argv[], LongOptions long_options) {
   std::map<char, std::string_view> opt_map;
   long_options.add_option({"generic", no_argument, NULL, 'g'});
+  long_options.add_option({"export-matrix", no_argument, NULL, 'm'});
+  long_options.add_option({"sample-map", required_argument, NULL, 's'});
   long_options.add_option({"export-sam", no_argument, NULL, 'e'});
   if (!parse_args(argc, argv, long_options.get_options(), long_options.optstring().c_str(),
                   opt_map)) {
@@ -58,9 +66,26 @@ int query_main(int argc, char* argv[], LongOptions long_options) {
     return -1;
   }
 
-  if (opt_map.count('g') == 1) {
-    OmicsExporter r(workspace.data(), array.data());
-    r.query();
+  if (opt_map.count('m') == 1 || opt_map.count('g') == 1) {
+    OmicsDSHandle handle = OmicsDS::connect(workspace.data(), array.data());
+    std::array<int64_t, 2> sample_range = {0, std::numeric_limits<int64_t>::max()};
+    std::vector<std::string> features = {};
+
+    MatrixFileProcessor file_processor(&std::cout);
+    feature_process_fn_t feature_processor;
+    if (opt_map.count('m') == 1) {
+      if (opt_map.count('s') == 1) {
+        file_processor.set_inverse_sample_map(opt_map.at('s'));
+      }
+      feature_processor =
+          std::bind(&MatrixFileProcessor::process, std::ref(file_processor), std::placeholders::_1,
+                    std::placeholders::_2, std::placeholders::_3);
+    } else if (opt_map.count('g') == 1) {
+      feature_processor = NULL;
+    }
+    OmicsDS::query_features(handle, features, sample_range, feature_processor);
+
+    OmicsDS::disconnect(handle);
   } else if (opt_map.count('e') == 1) {
     SamExporter s(workspace.data(), array.data());
     s.export_sams();

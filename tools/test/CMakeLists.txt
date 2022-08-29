@@ -24,30 +24,4 @@
 # THE SOFTWARE.
 #
 
-
-include_directories(Catch INTERFACE ${CMAKE_SOURCE_DIR}/dependencies/Catch2/single_include)
-
-set(CPP_INCLUDE_DIRS
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
-
-set(LINK_DEPENDENCIES
-        omicsds_static
-        ${OMICSDS_DEPENDENCIES}
-        ${CMAKE_DL_LIBS})
-
-set(CPP_TEST_SOURCES
-        test_omicsds_loader.cc
-        test_omics_field_data.cc
-        test_file_utility.cc
-        test_api.cc
-        test_logger.cc
-        test_encoder.cc)
-
-# ctests for library
-add_executable(ctests_lib ${CPP_TEST_SOURCES})
-target_include_directories(ctests_lib PRIVATE ${CPP_INCLUDE_DIRS})
-target_compile_definitions(ctests_lib PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
-target_link_libraries(ctests_lib ${LINK_DEPENDENCIES})
-add_test(ctests_lib ctests_lib -d yes)
+add_subdirectory(cpp)
