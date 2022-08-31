@@ -12,6 +12,5 @@ if [ ! -d $R_LIBS_PATH ]; then
 fi
 echo "R_LIBS=$R_LIBS_PATH" > .Renviron
 
-R -e 'install.packages("devtools", repos="https://cloud.r-project.org")'
-R -e 'install.packages("testthat", repos="https://cloud.r-project.org")'
+R -e 'install.packages(c("devtools", "testthat", "knitr", "rmarkdown", "Pandoc"), repos="https://cloud.r-project.org")'
 

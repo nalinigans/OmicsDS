@@ -7,6 +7,10 @@ test_that("version is valid", {
     expect_match(version, c("\\d*.\\d*.\\d*"))
 })
 
+file.path2 = function(..., fsep = .Platform$file.sep){
+    gsub("//", "/", file.path(..., fsep = fsep))
+}
+
 test_that("test that omicsds connects to an existing workspace for queries", {
     print(getwd())
     omicsds_repository <- Sys.getenv(c("OMICSDS_REPOSITORY"), unset="../../../..")

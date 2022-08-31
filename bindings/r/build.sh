@@ -29,5 +29,6 @@ R -e 'library(Rcpp); compileAttributes(".")'
 #R -e 'library(usethis); usethis::use_vignette("omicsds"
 R CMD build . &&
 R CMD INSTALL --preclean --configure-args="--with-omicsds=${OMICSDS_HOME}"  omicsds_0.0.1.tar.gz &&
+R CMD check --no-manual --no-build-vignettes --no-vignettes  --install-args="--configure-args='--with-omicsds=${OMICSDS_HOME}'" omicsds_0.0.1.tar.gz &&
 R CMD check --no-manual --install-args="--configure-args='--with-omicsds=${OMICSDS_HOME}'" omicsds_0.0.1.tar.gz &&
 R -e 'library(testthat); test_local()'
