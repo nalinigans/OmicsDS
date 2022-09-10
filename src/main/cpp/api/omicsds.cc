@@ -53,50 +53,19 @@ void OmicsDS::disconnect(OmicsDSHandle handle) {
 
 class FeatureProcessor {
  public:
-  FeatureProcessor(std::vector<std::string>& features, std::array<int64_t, 2>& sample_range,
-                   feature_process_fn_t proc)
-      : m_features(features),
-        m_process_all_features(!features.size()),
-        m_sample_range(sample_range),
-        m_proc(proc) {
-    logger.info("Sample range lo={} hi={}", sample_range[0], sample_range[1]);
-  }
-
-  inline bool in_range(int64_t row) {
-    return (m_sample_range[0] < 0 || m_sample_range[1] < 0) ||
-           (row >= m_sample_range[0] && row <= m_sample_range[1]);
-  }
-
-  inline size_t remaining(const std::string& remove_feature) {
-    auto found = std::find(m_features.begin(), m_features.end(), remove_feature);
-    if (found != m_features.end()) {
-      m_features.erase(found);
-    }
-    return m_features.size();
-  }
+  FeatureProcessor(std::vector<std::string>& features, feature_process_fn_t proc)
+      : m_features(features), m_process_all_features(!features.size()), m_proc(proc) {}
 
   void process(const std::array<uint64_t, 3>& coords, const std::vector<OmicsFieldData>& data) {
-    logger.debug("From cpp row_id={} feature_id={}", coords[0],
-                 decode_gtf_id({coords[1], coords[2]}));
     auto& row_id = coords[0];
-    if (in_range(row_id)) {
-      auto gtf_id = decode_gtf_id({coords[1], coords[2]});
-      // Heuristic to return early
-      if (!m_process_all_features && gtf_id != last_feature_processed) {
-        if (!remaining(last_feature_processed)) {
-          // nothing left to process
-          return;
-        }
-        last_feature_processed = gtf_id;
-      }
-      if (m_process_all_features ||
-          std::find(m_features.begin(), m_features.end(), gtf_id) != m_features.end()) {
-        float score = data[0].get<float>();
-        if (m_proc) {
-          m_proc(gtf_id, row_id, score);
-        } else {
-          logger.info("Feature id={}, Sample id={}, Score={}", gtf_id, row_id, score);
-        }
+    auto gtf_id = decode_gtf_id({coords[1], coords[2]});
+    if (m_process_all_features ||
+        std::find(m_features.begin(), m_features.end(), gtf_id) != m_features.end()) {
+      float score = data[0].get<float>();
+      if (m_proc) {
+        m_proc(gtf_id, row_id, score);
+      } else {
+        logger.info("Feature id={}, Sample id={}, Score={}", gtf_id, row_id, score);
       }
     }
   }
@@ -104,7 +73,6 @@ class FeatureProcessor {
  private:
   std::vector<std::string>& m_features;
   bool m_process_all_features;
-  std::array<int64_t, 2>& m_sample_range;
   feature_process_fn_t m_proc;
 
   std::string last_feature_processed;
@@ -117,8 +85,9 @@ void OmicsDS::query_features(OmicsDSHandle handle, std::vector<std::string>& fea
     const std::lock_guard<std::mutex> lock(omicsds_mutex);
     instance = omicsds_instances.at(handle);
   }
-  logger.debug("New Query");
-  FeatureProcessor feature_processor(features, sample_range, proc);
+  logger.debug("New Query for sample range = {}-{}", sample_range[0], sample_range[1]);
+
+  FeatureProcessor feature_processor(features, proc);
   process_function bound = std::bind(&FeatureProcessor::process, std::ref(feature_processor),
                                      std::placeholders::_1, std::placeholders::_2);
   std::array<int64_t, 2> encoded_feature_range = {0, std::numeric_limits<int64_t>::max()};

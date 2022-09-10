@@ -1,5 +1,5 @@
 #
-# CMakeLists.txt
+# print_test_log.sh
 #
 # The MIT License
 #
@@ -24,35 +24,13 @@
 # THE SOFTWARE.
 #
 
+#!/bin/bash
 
-include_directories(Catch INTERFACE ${CMAKE_SOURCE_DIR}/dependencies/Catch2/single_include)
+TEST_LOG="$GITHUB_WORKSPACE/build/Testing/Temporary/LastTest.log"
+if [[ -f $TEST_LOG ]]; then
+  echo "### cat $TEST_LOG"
+  cat $TEST_LOG
+  echo "### cat $TEST_LOG DONE"
+fi
 
-set(CPP_INCLUDE_DIRS
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
-
-set(LINK_DEPENDENCIES
-        omicsds_static
-        ${OMICSDS_DEPENDENCIES}
-        ${CMAKE_DL_LIBS})
-
-set(CPP_TEST_SOURCES
-        test_omicsds_loader.cc
-        test_omics_field_data.cc
-        test_file_utility.cc
-        test_api.cc
-        test_logger.cc
-        test_encoder.cc)
-
-# ctests for library
-add_executable(ctests_lib ${CPP_TEST_SOURCES})
-target_include_directories(ctests_lib PRIVATE ${CPP_INCLUDE_DIRS})
-target_compile_definitions(ctests_lib PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
-target_link_libraries(ctests_lib ${LINK_DEPENDENCIES})
-add_test(ctests_lib ctests_lib -d yes)
-
-add_custom_command(TARGET ctests_lib
-  COMMAND ${CMAKE_COMMAND} -E tar xzf 18k-1000-ws.tgz
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../inputs
-  DEPENDS 18k-1000-ws.tgz)
+exit 1

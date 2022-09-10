@@ -65,9 +65,33 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Create LFS file list
+      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+
+    # All caching actions should happen before  restoration. This action automatically
+    # caches the artifacts as post-build operations
+    - name: Cache LFS files
+      uses: actions/cache@v2
+      with:
+        path: .git/lfs
+        key: lfs-${{ hashFiles('.lfs-assets-id') }}-v1-${{runner.os}}
+
+    - name: Cache AWS SDK
+      uses: actions/cache@v2
+      with:
+        path: ~/awssdk-install
+        key: awssdk-v1-${{matrix.os}}
+
+    - name: Cache GCS SDK
+      uses: actions/cache@v2
+      with:
+        path: ~/gcssdk-install
+        key: gcssdk-v1-${{matrix.os}}
+
     - name: Create Build Environment
       shell: bash
       run: |
+        git lfs pull
         mkdir -p $CMAKE_BUILD_DIR
 
     - name: Build - Ubuntu
@@ -80,7 +104,7 @@ jobs:
         sudo apt-get -y install zlib1g-dev libssl-dev uuid-dev libcurl4-openssl-dev zstd
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME
         make -j4
-        make test -j4
+        make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
         make install
 
     - name: Build - MacOS
@@ -96,7 +120,7 @@ jobs:
         brew list zstd &>/dev/null || brew install zstd
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DDISABLE_OPENMP=1 -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME
         make -j4
-        make test -j4
+        make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
         make install
       env:
         OPENSSL_ROOT_DIR: /usr/local/opt/openssl@1.1
@@ -111,18 +135,6 @@ jobs:
         name: OmicsDS-Install-${{runner.os}}
         path: ${{env.OMICSDS_HOME}}.tar
         retention-days: 5
-
-    - name: Cache AWS SDK
-      uses: actions/cache@v2
-      with:
-        path: ${{env.HOME}}/awssdk-install
-        key: awssdk-v1-${{runner.os}}
-
-    - name: Cache GCS SDK
-      uses: actions/cache@v2
-      with:
-        path: ${{env.HOME}}/gcssdk-install
-        key: gcssdk-v1-${{runner.os}}
 
     - name: Upload Report to CodeCov
       uses: codecov/codecov-action@v1
