@@ -43,11 +43,12 @@ set(CPP_TEST_SOURCES
         test_file_utility.cc
         test_api.cc
         test_logger.cc
-        test_encoder.cc)
+        test_encoder.cc
+        test_matrix_loader.cc)
 
 # ctests for library
 add_executable(ctests_lib ${CPP_TEST_SOURCES})
-target_include_directories(ctests_lib PRIVATE ${CPP_INCLUDE_DIRS})
+target_include_directories(ctests_lib PRIVATE ${CPP_INCLUDE_DIRS} ${PROTOBUF_GENERATED_CXX_HDRS_INCLUDE_DIRS})
 target_compile_definitions(ctests_lib PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
 target_link_libraries(ctests_lib ${LINK_DEPENDENCIES})
 add_test(ctests_lib ctests_lib -d yes)

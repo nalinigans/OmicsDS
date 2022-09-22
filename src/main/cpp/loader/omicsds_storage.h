@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "omicsds_array_metadata.h"
 #include "omicsds_schema.h"
 
 #include <string>
@@ -42,7 +43,9 @@ class OmicsModule {
               const std::string& mapping_file, bool position_major)
       : m_workspace(workspace),
         m_array(array),
-        m_schema(std::make_shared<OmicsSchema>(mapping_file, position_major)) {}
+        m_schema(std::make_shared<OmicsSchema>(mapping_file, position_major)),
+        m_array_metadata(
+            std::make_shared<OmicsDSArrayMetadata>(m_workspace + "/" + m_array + "/metadata")) {}
   void serialize_schema(std::string path) { m_schema->serialize(path); }
   void serialize_schema() { serialize_schema(m_workspace + "/" + m_array + "/omics_schema"); }
   void deserialize_schema(std::string path) {
@@ -68,5 +71,6 @@ class OmicsModule {
   TileDB_CTX* m_tiledb_ctx;
   TileDB_Array* m_tiledb_array;
   std::shared_ptr<OmicsSchema> m_schema;
+  std::shared_ptr<OmicsDSArrayMetadata> m_array_metadata;
   int m_array_descriptor;
 };

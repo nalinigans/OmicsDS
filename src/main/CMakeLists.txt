@@ -33,6 +33,7 @@ set(OMICSDS_API_INCLUDE
 set(OMICSDS_INCLUDE_DIRS
   ${OMICSDS_CPP}/loader
   ${OMICSDS_CPP}/api
+  ${OMICSDS_CPP}/utils
   )
 
 set(OMICSDS_SOURCES
@@ -42,18 +43,23 @@ set(OMICSDS_SOURCES
   ${OMICSDS_CPP}/utils/omicsds_logger.cc
   ${OMICSDS_CPP}/utils/omicsds_file_utils.cc
   ${OMICSDS_CPP}/utils/omicsds_samplemap.cc
+  ${OMICSDS_CPP}/utils/omicsds_array_metadata.cc
   ${OMICSDS_CPP}/api/omicsds.cc
+  ${PROTOBUF_GENERATED_CXX_SRCS}
   )
+
+set_source_files_properties(${PROTOBUF_GENERATED_CXX_SRCS} ${PROTOBUF_GENERATED_CXX_HDRS} PROPERTIES GENERATED True)
 
 # Use PIC
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 add_library(omicsds_objs OBJECT ${OMICSDS_SOURCES})
+add_dependencies(omicsds_objs PROTOBUF_GENERATED_CXX_TARGET)
 
 target_include_directories(omicsds_objs
   PUBLIC ${CMAKE_BINARY_DIR}/src
-  PRIVATE ${OMICSDS_INCLUDE_DIRS} ${OMICSDS_CPP}/utils ${TILEDB_INCLUDE_DIR}
+  PRIVATE ${OMICSDS_INCLUDE_DIRS} ${TILEDB_INCLUDE_DIR} ${PROTOBUF_GENERATED_CXX_HDRS_INCLUDE_DIRS}
   )
 
 # Create static library

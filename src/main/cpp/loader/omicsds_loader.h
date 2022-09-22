@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "omicsds_array_metadata.h"
 #include "omicsds_samplemap.h"
 #include "omicsds_schema.h"
 #include "omicsds_storage.h"
@@ -442,15 +443,25 @@ class TranscriptomicsLoader : public OmicsLoader {
   //    std::shared_ptr<GeneIdMap> m_gene_id_map;
 };
 
+// Forward declaration of internal classes
+class DimensionExtent;
+
 class MatrixLoader : public OmicsLoader {
  public:
   MatrixLoader(const std::string& workspace, const std::string& array, const std::string& file_list,
                const std::string& sample_map)
-      : OmicsLoader(workspace, array, file_list, sample_map) {}
+      : OmicsLoader(workspace, array, file_list, sample_map) {
+    if (!m_array_metadata->is_initialized()) m_array_metadata->update_metadata(default_metadata());
+  }
   virtual void create_schema() override;
   virtual void import() override;
 
+  extents_t get_extent(Dimension dimension);
+  extents_t expand_extent(Dimension dimension, size_t value);
+
  protected:
+  static std::shared_ptr<ArrayMetadata> default_metadata();
+  static void generate_default_extent(DimensionExtent* dimension_extent, Dimension* dimension);
   virtual void add_reader(const std::string& filename) override;
 };
 

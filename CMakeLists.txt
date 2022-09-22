@@ -37,6 +37,11 @@ set(HTSLIB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/dependencies/htslib" CACHE PATH "Path
 set(TILEDB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/dependencies/TileDB" CACHE PATH "Path to TileDB source directory")
 set(SPDLOG_INCLUDE_DIR  "${CMAKE_SOURCE_DIR}/dependencies/spdlog/include" CACHE PATH "Path to SpdLog include directory")
 
+# Protobuf library
+set(OMICSDS_PROTOBUF_VERSION "3.19.4" CACHE STRING "Version of Google Protocol Buffer library")
+set(PROTOBUF_ROOT_DIR "$ENV{HOME}/protobuf-install" CACHE PATH "Path to installed protobuf")
+set(PROTOBUF_URL "https://github.com/protocolbuffers/protobuf/archive/v${OMICSDS_PROTOBUF_VERSION}.zip" CACHE STRING "URL to protobuf github release")
+
 # GIT_COMMIT_HASH derived from git tag to be used as part of OMICSDS_VERSION
 execute_process(
     COMMAND git log -1 --format=%h
@@ -139,12 +144,17 @@ include_directories(BEFORE ${HTSLIB_INCLUDE_DIR})
 find_package(TileDB REQUIRED)
 include_directories(${TILEDB_INCLUDE_DIR})
 
+#Protobuf library
+find_package(ProtobufWrapper REQUIRED)
+include_directories(${PROTOBUF_INCLUDE_DIRS})
+
 set(OMICSDS_DEPENDENCIES
   ${HTSLIB_LIBRARY}
   ${TILEDB_LIBRARY}
   ${OPENSSL_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${LIBUUID_LIBRARY}
+  ${PROTOBUF_LIBRARIES}
   -ldl
 )
 

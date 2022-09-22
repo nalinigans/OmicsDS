@@ -24,23 +24,25 @@
 # THE SOFTWARE.
 #
 
-if (NOT $ENV{RUNNER_OS} STREQUAL "Linux")
+if ((NOT DEFINED ENV{RUNNER_OS}) OR (NOT $ENV{RUNNER_OS} STREQUAL "Linux"))
   include_directories(Catch INTERFACE ${CMAKE_SOURCE_DIR}/dependencies/Catch2/single_include)
 
   set(CPP_INCLUDE_DIRS
-          ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
-          ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-          ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
+    ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
+    ${CMAKE_SOURCE_DIR}/src/main/cpp/api
+    ${CMAKE_SOURCE_DIR}/src/main/cpp/utils
+    ${PROTOBUF_GENERATED_CXX_HDRS_INCLUDE_DIRS}
+    )
 
   set(LINK_DEPENDENCIES
-          omicsds_static
-          ${OMICSDS_DEPENDENCIES}
-          ${CMAKE_DL_LIBS})
+    omicsds_static
+    ${OMICSDS_DEPENDENCIES}
+    ${CMAKE_DL_LIBS})
 
   # ctests for cli
   set(OMICDS_TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools/main")
   set(CPP_CLI_TEST_SOURCES
-          test_omicsds_cli.cc)
+    test_omicsds_cli.cc)
   add_executable(ctests_cli ${CPP_CLI_TEST_SOURCES} ${OMICDS_TOOLS_DIR}/cli_utils.cc)
   target_include_directories(ctests_cli PRIVATE ${CPP_INCLUDE_DIRS} ${OMICDS_TOOLS_DIR})
   target_compile_definitions(ctests_cli PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")

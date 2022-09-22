@@ -31,6 +31,8 @@
 #include "omicsds_file_utils.h"
 #include "omicsds_logger.h"
 
+#include "omicsds_array_metadata.pb.h"
+
 #include <tuple>
 
 void read_sam_file(std::string filename) {
@@ -1263,8 +1265,35 @@ void MatrixLoader::import() {
     m_pq.pop();
     push_file_from_cell(cell);
     MatrixCell* matrix_cell = (MatrixCell*)&cell;
+    expand_extent(Dimension::SAMPLE, matrix_cell->coords[1]);
+    expand_extent(Dimension::FEATURE, matrix_cell->coords[0]);
     buffer_cell(cell, matrix_cell->get_version());
   }
   write_buffers();
   logger.info("Import DONE");
+}
+
+extents_t MatrixLoader::get_extent(Dimension dimension) {
+  return m_array_metadata->get_extent(dimension);
+}
+
+extents_t MatrixLoader::expand_extent(Dimension dimension, size_t value) {
+  return m_array_metadata->expand_extent(dimension, value);
+}
+
+std::shared_ptr<ArrayMetadata> MatrixLoader::default_metadata() {
+  std::shared_ptr<ArrayMetadata> metadata = std::make_shared<ArrayMetadata>();
+  Dimension dim = Dimension::SAMPLE;
+  generate_default_extent(metadata->add_extents(), &dim);
+  dim = Dimension::FEATURE;
+  generate_default_extent(metadata->add_extents(), &dim);
+  return metadata;
+}
+
+void MatrixLoader::generate_default_extent(DimensionExtent* dimension_extent,
+                                           Dimension* dimension) {
+  dimension_extent->set_dimension(*dimension);
+  Extent* extent = dimension_extent->mutable_extent();
+  extent->set_start(-1ul);
+  extent->set_end(0ul);
 }
