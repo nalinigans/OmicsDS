@@ -49,10 +49,7 @@ void print_query_usage() {
 
 int query_main(int argc, char* argv[], LongOptions long_options) {
   std::map<char, std::string_view> opt_map;
-  long_options.add_option({"generic", no_argument, NULL, 'g'});
-  long_options.add_option({"export-matrix", no_argument, NULL, 'm'});
-  long_options.add_option({"sample-map", required_argument, NULL, 's'});
-  long_options.add_option({"export-sam", no_argument, NULL, 'e'});
+  long_options.populate_query_options();
   if (!parse_args(argc, argv, long_options.get_options(), long_options.optstring().c_str(),
                   opt_map)) {
     print_query_usage();
@@ -61,32 +58,32 @@ int query_main(int argc, char* argv[], LongOptions long_options) {
 
   std::string_view workspace;
   std::string_view array;
-  if (!get_option(opt_map, 'w', workspace) || !get_option(opt_map, 'a', array)) {
+  if (!get_option(opt_map, WORKSPACE, workspace) || !get_option(opt_map, ARRAY, array)) {
     print_query_usage();
     return -1;
   }
 
-  if (opt_map.count('m') == 1 || opt_map.count('g') == 1) {
+  if (opt_map.count(EXPORT_MATRIX) == 1 || opt_map.count(GENERIC) == 1) {
     OmicsDSHandle handle = OmicsDS::connect(workspace.data(), array.data());
     std::array<int64_t, 2> sample_range = {0, std::numeric_limits<int64_t>::max()};
     std::vector<std::string> features = {};
 
     MatrixFileProcessor file_processor(&std::cout);
     feature_process_fn_t feature_processor;
-    if (opt_map.count('m') == 1) {
-      if (opt_map.count('s') == 1) {
-        file_processor.set_inverse_sample_map(opt_map.at('s'));
+    if (opt_map.count(EXPORT_MATRIX) == 1) {
+      if (opt_map.count(SAMPLE_MAP) == 1) {
+        file_processor.set_inverse_sample_map(opt_map.at(SAMPLE_MAP));
       }
       feature_processor =
           std::bind(&MatrixFileProcessor::process, std::ref(file_processor), std::placeholders::_1,
                     std::placeholders::_2, std::placeholders::_3);
-    } else if (opt_map.count('g') == 1) {
+    } else if (opt_map.count(GENERIC) == 1) {
       feature_processor = NULL;
     }
     OmicsDS::query_features(handle, features, sample_range, feature_processor);
 
     OmicsDS::disconnect(handle);
-  } else if (opt_map.count('e') == 1) {
+  } else if (opt_map.count(EXPORT_SAM) == 1) {
     SamExporter s(workspace.data(), array.data());
     s.export_sams();
   } else {

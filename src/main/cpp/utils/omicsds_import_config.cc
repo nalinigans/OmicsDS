@@ -1,5 +1,5 @@
 /**
- * @file   omicsds_message_wrapper.h
+ * @file   omicsds_import_config.h
  *
  * @section LICENSE
  *
@@ -27,46 +27,25 @@
  *
  * @section DESCRIPTION
  *
- * Header file for wrapper around protobuf messages to manage loading and saving
+ * Implementation file for wrapper around protobuf import configuration
  */
 
-#pragma once
+#include "omicsds_import_config.h"
 
-#include <memory>
-#include <string_view>
-
-#include "omicsds_file_utils.h"
-#include "omicsds_logger.h"
-
-#include "tiledb_constants.h"
-#include "tiledb_utils.h"
-
-enum MessageFormat {
-  BINARY,
-  JSON,
-};
-
-template <class T>
-class OmicsDSMessage {
- public:
-  OmicsDSMessage(std::string_view path, MessageFormat format = MessageFormat::BINARY);
-  ~OmicsDSMessage();
-
-  /**
-   * Whether or not the wrapped message was loaded from a file.
-   */
-  bool loaded_from_file();
-
-  /**
-   * Returns the underlying message.
-   */
-  std::shared_ptr<T> message();
-
- private:
-  bool save_message();
-  bool parse_message();
-  std::string m_file_path;
-  std::shared_ptr<T> m_message;
-  bool m_loaded_from_file = false;
-  MessageFormat m_format;
-};
+void OmicsDSImportConfig::merge(const OmicsDSImportConfig& update_config) {
+  if (update_config.file_list) {
+    file_list = *update_config.file_list;
+  }
+  if (update_config.import_type) {
+    import_type = *update_config.import_type;
+  }
+  if (update_config.mapping_file) {
+    mapping_file = *update_config.mapping_file;
+  }
+  if (update_config.sample_major) {
+    sample_major = update_config.sample_major;
+  }
+  if (update_config.sample_map) {
+    sample_map = *update_config.sample_map;
+  }
+}

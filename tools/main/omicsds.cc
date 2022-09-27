@@ -38,7 +38,8 @@
 
 void print_action_usage() {
   std::cout << "Usage: omicsds <command> <arguments>\n\n"
-            << "Commands:\n\n"
+            << "Commands:\n"
+            << "\tconfigure\tconfigure an OmicsDS workspace\n"
             << "\timport\timport data to an OmicDS workspace\n"
             << "\tquery\tquery from an OmicsDS workspace\n";
 }
@@ -52,9 +53,11 @@ int main(int argc, char* argv[]) {
   HeapProfilerStart("omicsds_import.gperf.heap");
 #endif
   LongOptions long_options;
-  long_options.add_option({"workspace", required_argument, NULL, 'w'});
-  long_options.add_option({"array", required_argument, NULL, 'a'});
+  long_options.populate_shared_options();
   switch (get_action(argc, argv)) {
+    case ACTION::CONFIGURE:
+      configure_main(--argc, &argv[1], long_options);
+      break;
     case ACTION::IMPORT:
       import_main(--argc, &argv[1], long_options);
       break;

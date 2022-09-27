@@ -26,6 +26,7 @@
 
 set(CLI_CPP_SOURCES
   omicsds.cc
+  configure.cc
   import.cc
   query.cc
   cli_utils.cc)

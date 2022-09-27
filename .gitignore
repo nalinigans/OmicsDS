@@ -50,3 +50,7 @@ release/
 
 #gperf output
 omicsds_import.gperf.*
+
+# VS Code
+.devcontainer
+.vscode

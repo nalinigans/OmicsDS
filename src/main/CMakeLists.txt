@@ -39,11 +39,14 @@ set(OMICSDS_INCLUDE_DIRS
 set(OMICSDS_SOURCES
   ${OMICSDS_CPP}/loader/omicsds_loader.cc
   ${OMICSDS_CPP}/loader/omicsds_export.cc
+  ${OMICSDS_CPP}/loader/omicsds_configure.cc
   ${OMICSDS_CPP}/utils/omicsds_encoder.cc
   ${OMICSDS_CPP}/utils/omicsds_logger.cc
   ${OMICSDS_CPP}/utils/omicsds_file_utils.cc
   ${OMICSDS_CPP}/utils/omicsds_samplemap.cc
   ${OMICSDS_CPP}/utils/omicsds_array_metadata.cc
+  ${OMICSDS_CPP}/utils/omicsds_message_wrapper.cc
+  ${OMICSDS_CPP}/utils/omicsds_import_config.cc
   ${OMICSDS_CPP}/api/omicsds.cc
   ${PROTOBUF_GENERATED_CXX_SRCS}
   )

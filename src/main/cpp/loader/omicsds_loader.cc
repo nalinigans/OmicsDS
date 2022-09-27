@@ -26,6 +26,7 @@
 
 #include "omicsds_loader.h"
 
+#include "omicsds_configure.h"
 #include "omicsds_encoder.h"
 #include "omicsds_export.h"
 #include "omicsds_file_utils.h"
@@ -626,13 +627,6 @@ std::vector<OmicsCell> MatrixReader::get_next_cells() {
 
 int OmicsModule::tiledb_create_array(const std::string& workspace, const std::string& array_name,
                                      const OmicsSchema& schema) {
-  // initialize with the default configuration parameters
-  TileDB_CTX* tiledb_ctx;
-  CHECK_RC(tiledb_ctx_init(&tiledb_ctx, NULL));
-
-  // Create a workspace
-  CHECK_RC(tiledb_workspace_create(tiledb_ctx, workspace.c_str()));
-
   std::string full_name = workspace + "/" + array_name;
 
   // Prepare parameters for array schema
@@ -719,21 +713,16 @@ int OmicsModule::tiledb_create_array(const std::string& workspace, const std::st
   );
 
   // Create array
-  CHECK_RC(tiledb_array_create(tiledb_ctx, &array_schema));
+  CHECK_RC(tiledb_array_create(m_tiledb_ctx, &array_schema));
 
   // Free array schema
   CHECK_RC(tiledb_array_free_schema(&array_schema));
-
-  /* Finalize context. */
-  CHECK_RC(tiledb_ctx_finalize(tiledb_ctx));
 
   return 0;
 }
 
 int OmicsModule::tiledb_open_array(const std::string& workspace, const std::string& array_name,
                                    int mode) {
-  CHECK_RC(tiledb_ctx_init(&m_tiledb_ctx, NULL));
-
   std::string path = workspace + "/" + array_name;
 
   // Initialize array
@@ -752,10 +741,6 @@ int OmicsModule::tiledb_close_array() {
   // Finalize array
   if (m_tiledb_array) CHECK_RC(tiledb_array_finalize(m_tiledb_array));
   m_tiledb_array = 0;
-
-  // Finalize context
-  if (m_tiledb_ctx) CHECK_RC(tiledb_ctx_finalize(m_tiledb_ctx));
-  m_tiledb_ctx = 0;
 
   return 0;
 }
@@ -1296,4 +1281,41 @@ void MatrixLoader::generate_default_extent(DimensionExtent* dimension_extent,
   Extent* extent = dimension_extent->mutable_extent();
   extent->set_start(-1ul);
   extent->set_end(0ul);
+}
+
+std::shared_ptr<OmicsLoader> get_loader(std::string_view workspace, std::string_view array,
+                                        OmicsDSImportConfig config) {
+  std::shared_ptr<OmicsLoader> loader = NULL;
+  OmicsDSConfigure workspace_config(workspace);
+  OmicsDSImportConfig import_config = workspace_config.get_import_config();
+  import_config.merge(config);
+
+  if (!import_config.file_list || !import_config.sample_map || !import_config.import_type) {
+    return loader;
+  }
+
+  switch (*import_config.import_type) {
+    case OmicsDSImportType::FEATURE_IMPORT:
+      loader = std::make_shared<MatrixLoader>(workspace.data(), array.data(),
+                                              *import_config.file_list, *import_config.sample_map);
+      break;
+
+    case OmicsDSImportType::READ_IMPORT:
+      if (!import_config.mapping_file || !import_config.sample_major) {
+        return loader;
+      }
+      loader = std::make_shared<ReadCountLoader>(
+          workspace.data(), array.data(), *import_config.file_list, *import_config.sample_map,
+          *import_config.mapping_file, !import_config.sample_major);
+      break;
+    case OmicsDSImportType::INTERVAL_IMPORT:
+      if (!import_config.mapping_file || !import_config.sample_major) {
+        return loader;
+      }
+      loader = std::make_shared<TranscriptomicsLoader>(
+          workspace.data(), array.data(), *import_config.file_list, *import_config.sample_map,
+          *import_config.mapping_file, "", !import_config.sample_major);
+      break;
+  }
+  return loader;
 }

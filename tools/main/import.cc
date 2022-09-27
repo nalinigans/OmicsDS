@@ -59,13 +59,7 @@ void print_import_usage() {
 
 int import_main(int argc, char* argv[], LongOptions long_options) {
   std::map<char, std::string_view> opt_map;
-  long_options.add_option({"feature-level", no_argument, NULL, 'f'});
-  long_options.add_option({"read-level", no_argument, NULL, 'r'});
-  long_options.add_option({"interval-level", no_argument, NULL, 'i'});
-  long_options.add_option({"file-list", required_argument, NULL, 'l'});
-  long_options.add_option({"sample-map", required_argument, NULL, 's'});
-  long_options.add_option({"mapping-file", required_argument, NULL, 'm'});
-  long_options.add_option({"sample-major", no_argument, NULL, 'p'});
+  long_options.populate_import_options();
   if (!parse_args(argc, argv, long_options.get_options(), long_options.optstring().c_str(),
                   opt_map)) {
     print_import_usage();
@@ -76,42 +70,19 @@ int import_main(int argc, char* argv[], LongOptions long_options) {
   std::string_view array;
   std::string_view file_list;
   std::string_view sample_map;
-  if (!get_option(opt_map, 'w', workspace) || !get_option(opt_map, 'a', array) ||
-      !get_option(opt_map, 'l', file_list) || !get_option(opt_map, 's', sample_map)) {
+  if (!get_option(opt_map, WORKSPACE, workspace) || !get_option(opt_map, ARRAY, array)) {
     print_import_usage();
     return -1;
   }
 
-  if (opt_map.count('f') == 1) {
-    MatrixLoader l(workspace.data(), array.data(), file_list.data(), sample_map.data());
-    l.initialize();
-    l.import();
-  } else if (opt_map.count('r') == 1) {
-    std::string_view mapping_file;
-    if (!get_option(opt_map, 'm', mapping_file)) {
-      print_import_usage();
-      return -1;
-    }
-    std::string s_mapping_file = std::string(mapping_file.data());
-    bool position_major = opt_map.count('p') != 1;
-    ReadCountLoader l(workspace.data(), array.data(), file_list.data(), sample_map.data(),
-                      s_mapping_file, position_major);
-    l.initialize();
-    l.import();
-  } else if (opt_map.count('i') == 1) {
-    std::string_view mapping_file;
-    if (!get_option(opt_map, 'm', mapping_file)) {
-      print_import_usage();
-      return -1;
-    }
-    bool position_major = opt_map.count('p') != 1;
-    TranscriptomicsLoader l(workspace.data(), array.data(), file_list.data(), sample_map.data(),
-                            mapping_file.data(), "", position_major);
-    l.initialize();
-    l.import();
-  } else {
+  OmicsDSImportConfig import_config = generate_import_config(opt_map);
+  std::shared_ptr<OmicsLoader> loader = get_loader(workspace, array, import_config);
+  if (loader == NULL) {
     print_import_usage();
     return -1;
   }
+  loader->initialize();
+  loader->import();
+
   return 0;
 }

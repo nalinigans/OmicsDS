@@ -26,6 +26,7 @@
 
 set(PROTOBUF_PROTO_FILES
   omicsds_array_metadata.proto
+  omicsds_import_config.proto
   )
 
 set(PROTO_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR})

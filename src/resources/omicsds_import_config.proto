@@ -21,21 +21,16 @@
 */
 syntax = "proto2";
 
-message Extent {
-  optional uint64 start = 1;
-  optional uint64 end = 2;
+enum ImportType {
+  READ_LEVEL = 0;
+  INTERVAL_LEVEL = 1;
+  FEATURE_LEVEL = 2;
 }
 
-enum Dimension {
-  FEATURE = 0;
-  SAMPLE = 1;
-}
-
-message DimensionExtent {
-  optional Dimension dimension = 1;
-  optional Extent extent = 2;
-}
-
-message ArrayMetadata {
-  repeated DimensionExtent extents = 1;
+message ImportConfig {
+  optional ImportType import_type = 1;
+  optional string file_list = 2;
+  optional string sample_map = 3;
+  optional string mapping_file = 4;
+  optional bool sample_major = 5;
 }

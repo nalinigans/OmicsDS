@@ -27,6 +27,8 @@
 #pragma once
 
 #include "omicsds_array_metadata.h"
+#include "omicsds_exception.h"
+#include "omicsds_import_config.h"
 #include "omicsds_samplemap.h"
 #include "omicsds_schema.h"
 #include "omicsds_storage.h"
@@ -51,30 +53,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-class OmicsDSException : public std::exception {
- public:
-  OmicsDSException(const std::string m = "OmicsDS Exception") : m_msg(m) {}
-  ~OmicsDSException() {}
-  /** Returns the exception message. */
-  const char* what() const noexcept { return m_msg.c_str(); }
-
- private:
-  std::string m_msg;
-};
-
-class OmicsDSStorageException : public std::exception {
- public:
-  OmicsDSStorageException(std::string m = "OmicsDS Storage Exception") : m_msg(m) {
-    m += strlen(tiledb_errmsg) ? " : " + std::string(tiledb_errmsg) : "";
-  }
-  ~OmicsDSStorageException() {}
-  /** Returns the exception message. */
-  const char* what() const noexcept { return m_msg.c_str(); }
-
- private:
-  std::string m_msg;
-};
 
 void read_sam_file(std::string filename);
 
@@ -477,3 +455,9 @@ class MatrixCell : public OmicsCell {
  private:
   uint8_t m_version = 0;
 };
+
+/**
+ * Returns an OmicsLoader corresponding to the specified configuration
+ */
+std::shared_ptr<OmicsLoader> get_loader(std::string_view workspace, std::string_view array,
+                                        OmicsDSImportConfig config);

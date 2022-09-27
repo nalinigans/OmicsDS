@@ -27,6 +27,7 @@
 #pragma once
 
 #include "omicsds_array_metadata.h"
+#include "omicsds_exception.h"
 #include "omicsds_schema.h"
 
 #include <string>
@@ -38,14 +39,32 @@
 class OmicsModule {
  public:
   OmicsModule(const std::string& workspace, const std::string& array)
-      : m_workspace(workspace), m_array(array) {}
+      : m_workspace(workspace), m_array(array) {
+    setup_workspace();
+  }
   OmicsModule(const std::string& workspace, const std::string& array,
               const std::string& mapping_file, bool position_major)
       : m_workspace(workspace),
         m_array(array),
         m_schema(std::make_shared<OmicsSchema>(mapping_file, position_major)),
         m_array_metadata(
-            std::make_shared<OmicsDSArrayMetadata>(m_workspace + "/" + m_array + "/metadata")) {}
+            std::make_shared<OmicsDSArrayMetadata>(m_workspace + "/" + m_array + "/metadata")) {
+    setup_workspace();
+  }
+  ~OmicsModule() {
+    if (tiledb_ctx_finalize(m_tiledb_ctx) != TILEDB_OK) {
+      logger.warn("Failed to finalized TileDB context.");
+    }
+  }
+  void setup_workspace() {
+    if (tiledb_ctx_init(&m_tiledb_ctx, NULL) != TILEDB_OK) {
+      logger.fatal(OmicsDSStorageException());
+    }
+    if (!TileDBUtils::workspace_exists(m_workspace) &&
+        tiledb_workspace_create(m_tiledb_ctx, m_workspace.c_str()) != TILEDB_OK) {
+      logger.fatal(OmicsDSStorageException());
+    }
+  }
   void serialize_schema(std::string path) { m_schema->serialize(path); }
   void serialize_schema() { serialize_schema(m_workspace + "/" + m_array + "/omics_schema"); }
   void deserialize_schema(std::string path) {

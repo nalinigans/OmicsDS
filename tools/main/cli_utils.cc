@@ -94,6 +94,26 @@ std::string LongOptions::optstring() {
   return optstring;
 }
 
+void LongOptions::populate_shared_options() {
+  for (auto opt : SHARED_OPTIONS) {
+    add_option(OPTION_MAP.at(opt));
+  }
+}
+
+void LongOptions::populate_configure_options() { populate_import_options(); }
+
+void LongOptions::populate_import_options() {
+  for (auto opt : IMPORT_OPTIONS) {
+    add_option(OPTION_MAP.at(opt));
+  }
+}
+
+void LongOptions::populate_query_options() {
+  for (auto opt : QUERY_OPTIONS) {
+    add_option(OPTION_MAP.at(opt));
+  }
+}
+
 void MatrixFileProcessor::set_inverse_sample_map(std::string_view sample_map_file) {
   m_inverse_sample_map = SampleMap(sample_map_file.data()).invert_sample_map(true);
 }
@@ -127,4 +147,32 @@ void MatrixFileProcessor::process(const std::string& feature_id, uint64_t sample
   } else {
     *m_output_stream << "\t" << score;
   }
+}
+
+OmicsDSImportConfig generate_import_config(const std::map<char, std::string_view>& opt_map) {
+  OmicsDSImportConfig import_config;
+  if (opt_map.count(FEATURE_LEVEL) == 1) {
+    import_config.import_type =
+        std::make_optional<OmicsDSImportType>(OmicsDSImportType::FEATURE_IMPORT);
+  } else if (opt_map.count(READ_LEVEL) == 1) {
+    import_config.import_type =
+        std::make_optional<OmicsDSImportType>(OmicsDSImportType::READ_IMPORT);
+  } else if (opt_map.count(INTERVAL_LEVEL) == 1) {
+    import_config.import_type =
+        std::make_optional<OmicsDSImportType>(OmicsDSImportType::INTERVAL_IMPORT);
+  }
+
+  if (opt_map.count(FILE_LIST) == 1) {
+    import_config.file_list = std::make_optional<std::string>(opt_map.at(FILE_LIST));
+  }
+  if (opt_map.count(MAPPING_FILE) == 1) {
+    import_config.mapping_file = std::make_optional<std::string>(opt_map.at(MAPPING_FILE));
+  }
+  if (opt_map.count(SAMPLE_MAP) == 1) {
+    import_config.sample_map = std::make_optional<std::string>(opt_map.at(SAMPLE_MAP));
+  }
+  if (opt_map.count(SAMPLE_MAJOR) == 1) {
+    import_config.sample_major = true;
+  }
+  return import_config;
 }

@@ -40,18 +40,8 @@
 #include <unordered_map>
 #include <vector>
 
-/* Enum for the actions a user can undertake, along with a sentinel value for failure. */
-enum ACTION {
-  QUERY,
-  IMPORT,
-  UNKNOWN,
-};
-
-/* Maps user typeable strings to the appropriate action. */
-static std::map<std::string_view, ACTION> const ACTION_MAP = {
-    {"query", QUERY},
-    {"import", IMPORT},
-};
+#include "omicsds_cli_constants.h"
+#include "omicsds_import_config.h"
 
 class LongOptions {
  public:
@@ -69,6 +59,26 @@ class LongOptions {
    * Generate a getopt compatible optstring from the added options.
    */
   std::string optstring();
+
+  /**
+   * Populates the given LongOptions with the required shared options
+   */
+  void populate_shared_options();
+
+  /**
+   * Populates the given LongOptions with the required configure options
+   */
+  void populate_configure_options();
+
+  /**
+   * Populates the given LongOptions with the required import options
+   */
+  void populate_import_options();
+
+  /**
+   * Populates the given LongOptions with the required query options
+   */
+  void populate_query_options();
 
  private:
   std::vector<option> m_options;
@@ -110,6 +120,16 @@ class MatrixFileProcessor {
   std::vector<float> m_scores;
   std::shared_ptr<std::unordered_map<size_t, std::string>> m_inverse_sample_map = NULL;
 };
+
+/**
+ * Generates an OmicsDSImportConfig from an opt_map
+ */
+OmicsDSImportConfig generate_import_config(const std::map<char, std::string_view>& opt_map);
+
+/**
+ * Main function for import logic
+ */
+int configure_main(int argc, char* argv[], LongOptions long_options);
 
 /**
  * Main function for import logic

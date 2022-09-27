@@ -44,7 +44,9 @@ set(CPP_TEST_SOURCES
         test_api.cc
         test_logger.cc
         test_encoder.cc
-        test_matrix_loader.cc)
+        test_matrix_loader.cc
+        test_omicsds_import_config.cc
+        test_omicsds_configure.cc)
 
 # ctests for library
 add_executable(ctests_lib ${CPP_TEST_SOURCES})

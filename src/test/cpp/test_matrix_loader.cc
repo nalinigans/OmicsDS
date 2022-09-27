@@ -34,6 +34,7 @@
 #include "test_base.h"
 
 #include "omicsds_array_metadata.pb.h"
+#include "omicsds_configure.h"
 #include "omicsds_loader.h"
 
 TEST_CASE_METHOD(TempDir, "test MatrixLoader", "[MatrixLoader]") {
@@ -87,6 +88,30 @@ TEST_CASE_METHOD(TempDir, "test MatrixLoader", "[MatrixLoader]") {
       MatrixLoader ml = MatrixLoader(workspace, "array", file_list, sample_map);
       ml.initialize();
       ml.import();
+    }
+
+    OmicsDSArrayMetadata metadata = OmicsDSArrayMetadata(workspace + "/array/metadata");
+    REQUIRE(metadata.get_extent(Dimension::SAMPLE).first == 0ul);
+    REQUIRE(metadata.get_extent(Dimension::SAMPLE).second == 303ul);
+    REQUIRE(metadata.get_extent(Dimension::FEATURE).first == 281474976848846ul);
+    REQUIRE(metadata.get_extent(Dimension::FEATURE).second == 281474976954141ul);
+  }
+
+  SECTION("test configure import") {
+    std::string workspace = append("configure-workspace");
+    {
+      OmicsDSConfigure config(workspace);
+      OmicsDSImportConfig import;
+      import.file_list = std::optional<std::string>(file_list);
+      import.sample_map = std::optional<std::string>(sample_map);
+      import.import_type = std::optional<OmicsDSImportType>(OmicsDSImportType::FEATURE_IMPORT);
+      config.update_import_config(import);
+    }
+    {
+      OmicsDSImportConfig import;
+      std::shared_ptr<OmicsLoader> loader = get_loader(workspace, "array", import);
+      loader->initialize();
+      loader->import();
     }
 
     OmicsDSArrayMetadata metadata = OmicsDSArrayMetadata(workspace + "/array/metadata");

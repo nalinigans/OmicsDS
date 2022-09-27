@@ -1,5 +1,5 @@
 /**
- * @file   omicsds_message_wrapper.h
+ * @file   omicsds_import_config.h
  *
  * @section LICENSE
  *
@@ -27,46 +27,37 @@
  *
  * @section DESCRIPTION
  *
- * Header file for wrapper around protobuf messages to manage loading and saving
+ * Header file for wrapper around protobuf import configuration
  */
 
 #pragma once
 
-#include <memory>
-#include <string_view>
+#include <optional>
+#include <string>
 
-#include "omicsds_file_utils.h"
-#include "omicsds_logger.h"
-
-#include "tiledb_constants.h"
-#include "tiledb_utils.h"
-
-enum MessageFormat {
-  BINARY,
-  JSON,
+// Import Types
+enum OmicsDSImportType {
+  FEATURE_IMPORT,
+  READ_IMPORT,
+  INTERVAL_IMPORT,
 };
 
-template <class T>
-class OmicsDSMessage {
- public:
-  OmicsDSMessage(std::string_view path, MessageFormat format = MessageFormat::BINARY);
-  ~OmicsDSMessage();
+// Configuration parameters
+struct OmicsDSImportConfig {
+  std::optional<OmicsDSImportType> import_type;
+  std::optional<std::string> file_list;
+  std::optional<std::string> sample_map;
+  std::optional<std::string> mapping_file;
+  bool sample_major = false;
 
   /**
-   * Whether or not the wrapped message was loaded from a file.
+   * Update this OmicsDSImportConfig, using set fields in update_config.
+   *
+   * Any fields which are set (the std::optional contains a value rather than a std::nullopt_t) in
+   * update_config will be used to overwrite the value of the corresponding field in the
+   * OmicsDSImportConfig instance this function is called on.
+   *
+   * \param update_config OmicsDSImportConfig instance to read updated values from.
    */
-  bool loaded_from_file();
-
-  /**
-   * Returns the underlying message.
-   */
-  std::shared_ptr<T> message();
-
- private:
-  bool save_message();
-  bool parse_message();
-  std::string m_file_path;
-  std::shared_ptr<T> m_message;
-  bool m_loaded_from_file = false;
-  MessageFormat m_format;
+  void merge(const OmicsDSImportConfig& update_config);
 };

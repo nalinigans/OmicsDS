@@ -42,7 +42,8 @@ if ((NOT DEFINED ENV{RUNNER_OS}) OR (NOT $ENV{RUNNER_OS} STREQUAL "Linux"))
   # ctests for cli
   set(OMICDS_TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools/main")
   set(CPP_CLI_TEST_SOURCES
-    test_omicsds_cli.cc)
+    test_omicsds_cli.cc
+    test_import_config.cc)
   add_executable(ctests_cli ${CPP_CLI_TEST_SOURCES} ${OMICDS_TOOLS_DIR}/cli_utils.cc)
   target_include_directories(ctests_cli PRIVATE ${CPP_INCLUDE_DIRS} ${OMICDS_TOOLS_DIR})
   target_compile_definitions(ctests_cli PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
