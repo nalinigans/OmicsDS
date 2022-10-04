@@ -26,6 +26,7 @@
 #include <iostream>
 
 #include "omicsds_cli.h"
+#include "omicsds_consolidate.h"
 #include "omicsds_loader.h"
 
 void print_import_usage() {
@@ -54,7 +55,9 @@ void print_import_usage() {
                "flattened\n\t\t\tcoordinates. Currently supports fasta.fai "
                "(only needs first 3 columns: contig name, length,\n\t\t\tand "
                "starting index separated by tabs). Not needed for ingesting "
-               "feature-level data\n";
+               "feature-level data\n"
+            << "\t \e[1m--consolidate\e[0m, \e[1m-c\e[0m If provided, the array will be "
+               "consolidated after import.\n";
 }
 
 int import_main(int argc, char* argv[], LongOptions long_options) {
@@ -76,13 +79,24 @@ int import_main(int argc, char* argv[], LongOptions long_options) {
   }
 
   OmicsDSImportConfig import_config = generate_import_config(opt_map);
-  std::shared_ptr<OmicsLoader> loader = get_loader(workspace, array, import_config);
-  if (loader == NULL) {
-    print_import_usage();
-    return -1;
+  // Scoping this block lets us make sure the loader has given up it's hold on the workspace
+  // prior to attempting consolidation
+  {
+    std::shared_ptr<OmicsLoader> loader = get_loader(workspace, array, import_config);
+    if (loader == NULL) {
+      print_import_usage();
+      return -1;
+    }
+    loader->initialize();
+    loader->import();
   }
-  loader->initialize();
-  loader->import();
+
+  if (opt_map.count(CONSOLIDATE_IMPORT) == 1) {
+    OmicsDSConsolidate consolidator(workspace, array);
+    if (!consolidator.consolidate()) {
+      return -1;
+    }
+  }
 
   return 0;
 }

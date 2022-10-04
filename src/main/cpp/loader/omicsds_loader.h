@@ -365,6 +365,9 @@ class OmicsLoader : public OmicsModule {
   size_t m_buffered_cells = 0;
   size_t m_total_processed_cells = 0;
 
+  // warning if import will cause multiple fragments to be writen out
+  bool m_split_warning_emitted = false;
+
   virtual void add_reader(
       const std::string&
           filename) = 0;  // construct a derived class of OmicsFileReader and insert in m_files

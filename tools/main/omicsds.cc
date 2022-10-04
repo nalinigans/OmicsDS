@@ -40,6 +40,7 @@ void print_action_usage() {
   std::cout << "Usage: omicsds <command> <arguments>\n\n"
             << "Commands:\n"
             << "\tconfigure\tconfigure an OmicsDS workspace\n"
+            << "\tconsolidate\tconsolidate an OmicsDS workspace\n"
             << "\timport\timport data to an OmicDS workspace\n"
             << "\tquery\tquery from an OmicsDS workspace\n";
 }
@@ -57,6 +58,9 @@ int main(int argc, char* argv[]) {
   switch (get_action(argc, argv)) {
     case ACTION::CONFIGURE:
       configure_main(--argc, &argv[1], long_options);
+      break;
+    case ACTION::CONSOLIDATE:
+      consolidate_main(--argc, &argv[1], long_options);
       break;
     case ACTION::IMPORT:
       import_main(--argc, &argv[1], long_options);

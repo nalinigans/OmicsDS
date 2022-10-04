@@ -127,9 +127,14 @@ class MatrixFileProcessor {
 OmicsDSImportConfig generate_import_config(const std::map<char, std::string_view>& opt_map);
 
 /**
- * Main function for import logic
+ * Main function for configure logic
  */
 int configure_main(int argc, char* argv[], LongOptions long_options);
+
+/**
+ * Main function for consolidate logic
+ */
+int consolidate_main(int argc, char* argv[], LongOptions long_options);
 
 /**
  * Main function for import logic

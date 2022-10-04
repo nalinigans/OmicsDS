@@ -856,6 +856,12 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
 
   bool close_array = less_than(m_pq.top(), cell);
   if (++m_buffered_cells > 1024 * 1024 * 1 /*1M cells ~320MB for single cell*/ || close_array) {
+    if (!m_split_warning_emitted && !m_pq.empty()) {
+      m_split_warning_emitted = true;
+      logger.warn(
+          "Array is being split over multiple fragments. This may cause perfomance penalties while "
+          "querying. Consider consolidating the array after import.");
+    }
     write_buffers();
   }
   if (close_array) {
@@ -1301,7 +1307,7 @@ std::shared_ptr<OmicsLoader> get_loader(std::string_view workspace, std::string_
       break;
 
     case OmicsDSImportType::READ_IMPORT:
-      if (!import_config.mapping_file || !import_config.sample_major) {
+      if (!import_config.mapping_file) {
         return loader;
       }
       loader = std::make_shared<ReadCountLoader>(
@@ -1309,7 +1315,7 @@ std::shared_ptr<OmicsLoader> get_loader(std::string_view workspace, std::string_
           *import_config.mapping_file, !import_config.sample_major);
       break;
     case OmicsDSImportType::INTERVAL_IMPORT:
-      if (!import_config.mapping_file || !import_config.sample_major) {
+      if (!import_config.mapping_file) {
         return loader;
       }
       loader = std::make_shared<TranscriptomicsLoader>(

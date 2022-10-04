@@ -40,6 +40,7 @@
 /* Enum for the actions a user can undertake, along with a sentinel value for failure. */
 enum ACTION {
   CONFIGURE,
+  CONSOLIDATE,
   QUERY,
   IMPORT,
   UNKNOWN,
@@ -48,6 +49,7 @@ enum ACTION {
 /* Maps user typeable strings to the appropriate action. */
 static std::map<std::string_view, ACTION> const ACTION_MAP = {
     {"configure", CONFIGURE},
+    {"consolidate", CONSOLIDATE},
     {"query", QUERY},
     {"import", IMPORT},
 };
@@ -70,13 +72,15 @@ const char FEATURE_LEVEL = 'f';
 const char FILE_LIST = 'l';
 const char MAPPING_FILE = 'm';
 const char SAMPLE_MAJOR = 'p';
-static const std::array<const char, 6> IMPORT_OPTIONS = {
-    READ_LEVEL, INTERVAL_LEVEL, FEATURE_LEVEL, FILE_LIST, MAPPING_FILE, SAMPLE_MAJOR,
+const char CONSOLIDATE_IMPORT = 'c';
+static const std::array<const char, 7> IMPORT_OPTIONS = {
+    READ_LEVEL,   INTERVAL_LEVEL, FEATURE_LEVEL,      FILE_LIST,
+    MAPPING_FILE, SAMPLE_MAJOR,   CONSOLIDATE_IMPORT,
 };
 
 /* Query options */
 const char GENERIC = 'g';
-const char EXPORT_MATRIX = 'm';
+const char EXPORT_MATRIX = 'x';
 const char EXPORT_SAM = 'e';
 static const std::array<const char, 3> QUERY_OPTIONS = {
     GENERIC,
@@ -95,6 +99,7 @@ static const std::map<char, option> OPTION_MAP = {
     {FILE_LIST, {"file-list", required_argument, NULL, FILE_LIST}},
     {MAPPING_FILE, {"mapping-file", required_argument, NULL, MAPPING_FILE}},
     {SAMPLE_MAJOR, {"sample-major", no_argument, NULL, SAMPLE_MAJOR}},
+    {CONSOLIDATE_IMPORT, {"consolidate", no_argument, NULL, CONSOLIDATE_IMPORT}},
     {GENERIC, {"generic", no_argument, NULL, GENERIC}},
     {EXPORT_MATRIX, {"export-matrix", no_argument, NULL, EXPORT_MATRIX}},
     {EXPORT_SAM, {"export-sam", no_argument, NULL, EXPORT_SAM}}};
