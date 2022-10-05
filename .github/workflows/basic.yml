@@ -37,6 +37,7 @@ on:
 env:
   CMAKE_BUILD_TYPE: Coverage
   CMAKE_BUILD_DIR: ${{github.workspace}}/build
+  PROTOBUF_VERSION: 3.21.6
   OMICSDS_ROOT_DIR: ${{github.workspace}}
 
 jobs:
@@ -89,6 +90,12 @@ jobs:
         path: ~/gcssdk-install
         key: gcssdk-v1-${{matrix.os}}
 
+    - name: Cache Protobuf
+      uses: actions/cache@v2
+      with:
+        path: ~/protobuf-install/{{env.PROTOBUF_VERSION}}
+        key: protobuf-install-v{{env.PROTOBUF_VERSION}}-${{matrix.os}}
+
     - name: Create Build Environment
       shell: bash
       run: |
@@ -103,7 +110,8 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get -y install cmake lcov
         sudo apt-get -y install zlib1g-dev libssl-dev uuid-dev libcurl4-openssl-dev zstd
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME \
+                                -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION
         make -j4
         make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
         $GITHUB_WORKSPACE/tools/test/test_cli.sh
@@ -120,7 +128,8 @@ jobs:
         brew list openssl@1.1 &>/dev/null || brew install openssl@1.1
         brew list ossp-uuid &>/dev/null || brew install ossp-uuid
         brew list zstd &>/dev/null || brew install zstd
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DDISABLE_OPENMP=1 -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DDISABLE_OPENMP=1 -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME \
+                                -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION
         make -j4
         make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
         $GITHUB_WORKSPACE/tools/test/test_cli.sh
@@ -149,6 +158,7 @@ jobs:
     env:
       OMICSDS_INSTALL_DIR: install-ubuntu-latest
       OMICSDS_HOME: ${{github.workspace}}/install-ubuntu-latest
+      RENV_PATHS_ROOT: ~/.local/share/renv
 
     steps:
     - uses: actions/checkout@v2
@@ -156,19 +166,35 @@ jobs:
     - name: Set up R
       uses: r-lib/actions/setup-r@v2
 
-    - name: Download Install Artifact
+    - name: Cache packages
+      uses: actions/cache@v1
+      with:
+        path: ${{ env.RENV_PATHS_ROOT }}
+        key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-renv-
+
+    - name: Restore packages
+      shell: Rscript {0}
+      run: |
+        if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+        renv::restore()
+
+    - name: Download Install Artifact from main build
       uses: actions/download-artifact@v2
       with:
         name: OmicsDS-Install-${{runner.os}}
 
-    - name: Extract Install Artifacts
+    - name: Extract from downloaded install artifact
       working-directory: ${{github.workspace}}
       run: tar -xvf $OMICSDS_HOME.tar && ls -l $OMICSDS_HOME
 
     - name: Install Dependencies - Ubuntu
       shell: Rscript {0}
       run: |
-        system("sudo apt-get install libcurl4-openssl-dev")
+        system("echo RENV_PATHS_ROOT=${RENV_PATHS_ROOT}")
+        system("ls ${RENV_PATHS_ROOT}")
+        system("sudo apt-get install -y libcurl4-openssl-dev")
         install.packages(c("remotes", "rcmdcheck"))
         remotes::install_deps("bindings/r", dependencies = TRUE)
       env:

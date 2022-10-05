@@ -38,7 +38,7 @@ set(TILEDB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/dependencies/TileDB" CACHE PATH "Path
 set(SPDLOG_INCLUDE_DIR  "${CMAKE_SOURCE_DIR}/dependencies/spdlog/include" CACHE PATH "Path to SpdLog include directory")
 
 # Protobuf library
-set(OMICSDS_PROTOBUF_VERSION "3.19.4" CACHE STRING "Version of Google Protocol Buffer library")
+set(OMICSDS_PROTOBUF_VERSION "3.21.7" CACHE STRING "Version of Google Protocol Buffer library")
 set(PROTOBUF_ROOT_DIR "$ENV{HOME}/protobuf-install" CACHE PATH "Path to installed protobuf")
 set(PROTOBUF_URL "https://github.com/protocolbuffers/protobuf/archive/v${OMICSDS_PROTOBUF_VERSION}.zip" CACHE STRING "URL to protobuf github release")
 
