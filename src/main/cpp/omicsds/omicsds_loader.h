@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <fstream>
+
 #include "omicsds_array_metadata.h"
 #include "omicsds_exception.h"
 #include "omicsds_import_config.h"
@@ -332,7 +334,7 @@ class OmicsLoader : public OmicsModule {
               const std::string& mapping_file = "",  // see GenomicMap struct
               bool position_major = true  // sample major (false) or position major (true)
   );
-  ~OmicsLoader() { tiledb_close_array(); }
+  virtual ~OmicsLoader() { tiledb_close_array(); }
   virtual void import();             // import data from callsets
   virtual void create_schema() = 0;  //
   void

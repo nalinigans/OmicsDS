@@ -21,7 +21,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * Header files for OmicsDS schema.
+ * Implementation of the OmicsDS schema.
  */
 
 #pragma once
@@ -35,10 +35,10 @@
 #include <utility>
 #include <vector>
 
-#include "tiledb_constants.h"
-#include "tiledb_utils.h"
-
 #include "omicsds_file_utils.h"
+#include "tiledb_constants.h"
+
+#define OMICSDS_VERSION "v1"
 
 #define CHECK_RC(...)                                      \
   do {                                                     \
@@ -59,6 +59,8 @@ class GenomicMap {
   // construct from extant FileUtility
   // used to deserialize omics schema after attributes are read from same file
   GenomicMap(std::shared_ptr<FileUtility> mapping_reader);
+  // Initialize the GenomicMap using mapping_reader to read the underlying file
+  void initialize(std::shared_ptr<FileUtility> mapping_reader);
   // map from contig_name and offset to single coordinate for use in tiledb
   uint64_t flatten(std::string contig_name, uint64_t offset);
   // reverse of flatten
@@ -85,7 +87,7 @@ class GenomicMap {
   };
 
  private:
-  std::shared_ptr<FileUtility> m_mapping_reader;
+  std::shared_ptr<FileUtility> m_mapping_reader = nullptr;
   std::vector<contig> contigs;
   // indices from GenomicMap::contigs sorted by contig name
   // used by flatten

@@ -33,13 +33,30 @@
 #include <iostream>
 
 #include "omicsds_file_utils.h"
+
+#include "omicsds_exception.h"
 #include "omicsds_logger.h"
+#include "omicsds_status.h"
 #include "tiledb_utils.h"
+
+template <typename... Args>
+void check(int rc, const std::string& tiledb_errmsg, const char* fmt, const Args&... args) {
+  if (rc) {
+    if (errno > 0) {
+      logger.fatal(OmicsDSStorageException(), "rc={} errno={} ({}) {}", rc, errno,
+                   std::strerror(errno));
+    } else {
+      logger.fatal(OmicsDSStorageException(), " rc={}", rc);
+    }
+  }
+}
 
 FileUtility::FileUtility(const std::string& filename, size_t buffer_size) : filename(filename) {
   if (!TileDBUtils::is_file(filename)) {
-    logger.error("Filename {} does not specify the path to a file.", filename);
+    throw(OmicsDSException(
+        logger.format("Filename {} does not specify the path to a file", filename)));
   }
+
   ssize_t read_file_size = TileDBUtils::file_size(filename);
   if (read_file_size <= 0) {
     logger.warn("Read invalid size of {}, for file {}.", read_file_size, filename);
@@ -85,19 +102,30 @@ int FileUtility::read_file(void* buffer, size_t chars_to_read) {
     buf_position = read_from_str_buffer(buffer, chars_to_read);
     chars_to_read -= buf_position;
   }
-  int rcode =
-      TileDBUtils::read_file(filename, chars_read, (char*)buffer + buf_position, chars_to_read);
+  check(TileDBUtils::read_file(filename, chars_read, (char*)buffer + buf_position, chars_to_read),
+        tiledb_errmsg, "Could not read file {} into buffer", filename);
   chars_read += chars_to_read;
-  return rcode;
+  return OMICSDS_OK;
 }
 
-int FileUtility::write_file(std::string filename, const std::string& str, const bool overwrite) {
-  return TileDBUtils::write_file(filename, str.c_str(), str.size(), overwrite);
+bool FileUtility::is_file(const std::string& path) { return TileDBUtils::is_file(path); }
+
+bool FileUtility::is_workspace(const std::string& workspace) {
+  return TileDBUtils::workspace_exists(workspace);
 }
 
-int FileUtility::write_file(std::string filename, const void* buffer, size_t length,
+int FileUtility::write_file(const std::string& filename, const std::string& str,
                             const bool overwrite) {
-  return TileDBUtils::write_file(filename, buffer, length, overwrite);
+  check(TileDBUtils::write_file(filename, str.c_str(), str.size(), overwrite), tiledb_errmsg,
+        "Could not write string to file {}", filename);
+  return OMICSDS_OK;
+}
+
+int FileUtility::write_file(const std::string& filename, const void* buffer, size_t length,
+                            const bool overwrite) {
+  check(TileDBUtils::write_file(filename, buffer, length, overwrite), tiledb_errmsg,
+        "Could not write buffer to file {}", filename);
+  return OMICSDS_OK;
 }
 
 size_t FileUtility::read_from_str_buffer(void* buffer, size_t chars_to_read) {
@@ -107,7 +135,7 @@ size_t FileUtility::read_from_str_buffer(void* buffer, size_t chars_to_read) {
   return readable_chars;
 }
 
-std::vector<std::string> split(std::string str, std::string sep) {
+std::vector<std::string> split(std::string str, const std::string& sep) {
   std::vector<std::string> retval;
   size_t index;
 

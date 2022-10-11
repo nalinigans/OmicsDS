@@ -56,6 +56,7 @@ void read_sam_file(std::string filename) {
   // printf("%d\n",tar);
 
   int rc;
+
   std::cerr << "before while" << std::endl;
   while (!(rc = sam_read1(fp_in, bamHdr, aln))) {
     int32_t pos =
@@ -113,11 +114,16 @@ void read_sam_file(std::string filename) {
   sam_close(fp_in);
 }
 
-GenomicMap::GenomicMap(const std::string& mapping_file)
-    : GenomicMap(std::make_shared<FileUtility>(mapping_file)) {}
+GenomicMap::GenomicMap(const std::string& mapping_file) {
+  if (FileUtility::is_file(mapping_file)) {
+    initialize(std::make_shared<FileUtility>(mapping_file));
+  }
+}
 
-GenomicMap::GenomicMap(std::shared_ptr<FileUtility> mapping_reader)
-    : m_mapping_reader(mapping_reader) {
+GenomicMap::GenomicMap(std::shared_ptr<FileUtility> mapping_reader) { initialize(mapping_reader); }
+
+void GenomicMap::initialize(std::shared_ptr<FileUtility> mapping_reader) {
+  m_mapping_reader = mapping_reader;
   std::string str;
   int line_num = -1;
   while (m_mapping_reader->generalized_getline(str)) {
@@ -207,13 +213,10 @@ void GenomicMap::serialize(std::string path) {
 }
 
 void OmicsSchema::serialize(std::string path) {
-  if (TileDBUtils::is_file(path)) {
-    TileDBUtils::delete_file(path);
-  }
+  FileUtility::write_file(path, std::string(OMICSDS_VERSION) + "\n", true);  // version
 
   auto write = [&](std::string str) { return FileUtility::write_file(path, str); };
 
-  write("v1\n");  // version
   std::string order_str = (order == POSITION_MAJOR) ? "POSITION_MAJOR\n" : "SAMPLE_MAJOR\n";
   write(order_str);  // order
   std::string num_attributes_str = std::to_string(attributes.size()) + "\tattributes\n";
@@ -232,15 +235,15 @@ void OmicsSchema::serialize(std::string path) {
 }
 
 bool OmicsSchema::create_from_file(const std::string& filename) {
-  if (!TileDBUtils::is_file(filename)) {
-    std::cerr << "Error: cannot deserialize OmicsSchema, " << filename << " does not exist"
-              << std::endl;
+  std::shared_ptr<FileUtility> reader;
+  try {
+    reader = std::make_shared<FileUtility>(filename);
+  } catch (const OmicsDSException& e) {
+    logger.error("Cannot deserialize OmicsSchema {}", filename);
     return false;
   }
 
-  std::shared_ptr<FileUtility> reader = std::make_shared<FileUtility>(filename);
   std::string str;
-
   // version
   if (!reader->generalized_getline(str)) {
     std::cerr << "Error: cannot deserialize OmicsSchema, " << filename << " is empty" << std::endl;
@@ -859,8 +862,8 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
     if (!m_split_warning_emitted && !m_pq.empty()) {
       m_split_warning_emitted = true;
       logger.warn(
-          "Array is being split over multiple fragments. This may cause perfomance penalties while "
-          "querying. Consider consolidating the array after import.");
+          "Array is being split over multiple fragments. This may cause perfomance penalties "
+          "while querying. Consider consolidating the array after import.");
     }
     write_buffers();
   }
@@ -918,7 +921,8 @@ void TranscriptomicsLoader::create_schema() {
   m_schema->attributes.emplace("SCORE",
                                OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_float_t, 1));
   //  m_schema->attributes.emplace("GENE",
-  //  OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_char, -1)); // Will be N/A for bed files
+  //  OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_char, -1)); // Will be N/A for bed
+  //  files
   m_schema->attributes.emplace("SAMPLE_NAME",
                                OmicsFieldInfo(OmicsFieldInfo::OmicsFieldType::omics_char, -1));
   m_schema->attributes.emplace(
@@ -1169,7 +1173,7 @@ void OmicsLoader::initialize() {  // FIXME move file reader creation to somewher
   FileUtility list(m_file_list);
   std::string filename;
   while (list.generalized_getline(filename)) {
-    if (TileDBUtils::is_file(filename)) {
+    if (FileUtility::is_file(filename)) {
       add_reader(filename);
     }
   }

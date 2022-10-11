@@ -27,10 +27,11 @@
 #include <catch2/catch.hpp>
 #include "test_base.h"
 
+#include "omicsds_exception.h"
 #include "omicsds_file_utils.h"
-#include "tiledb_constants.h"
+#include "omicsds_status.h"
 
-TEST_CASE("test split", "[test_split]") {
+TEST_CASE("test split", "[test-split]") {
   auto splits = split("foo\tfoo1", "\t");
   REQUIRE(splits.size() == 2);
   CHECK(splits[0] == "foo");
@@ -64,12 +65,19 @@ TEST_CASE("test split", "[test_split]") {
   REQUIRE(splits.size() == 0);
 }
 
-TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
+TEST_CASE_METHOD(TempDir, "test FileUtility", "[test-file-utility]") {
+  SECTION("test constructor") {
+    REQUIRE_THROWS_AS(FileUtility(""), OmicsDSException);
+    REQUIRE_THROWS_AS(FileUtility("non-existent-file"), OmicsDSException);
+  }
+
   std::string test_text = "line1\nline2\n";
 
   SECTION("test writes", "[utility FileUtility write]") {
     std::string tmp_file = append("write-test");
-    REQUIRE(FileUtility::write_file(tmp_file, test_text) == TILEDB_OK);
+    REQUIRE(FileUtility::write_file(tmp_file, test_text) == OMICSDS_OK);
+    REQUIRE_NOTHROW(FileUtility(tmp_file));
+    REQUIRE_NOTHROW(FileUtility(tmp_file, 1024));
   }
 
   SECTION("test reads", "[utility FileUtility read]") {
@@ -77,7 +85,7 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
     SECTION("test common reads", "[utility FileUtility read]") {
       SECTION("test no newline") {
         REQUIRE(FileUtility::write_file(tmp_file, test_text.substr(0, test_text.size() - 1)) ==
-                TILEDB_OK);
+                OMICSDS_OK);
         FileUtility fu = FileUtility(tmp_file);
 
         std::string retval;
@@ -88,7 +96,7 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
         REQUIRE(retval == "line2");
       }
 
-      REQUIRE(FileUtility::write_file(tmp_file, test_text) == TILEDB_OK);
+      REQUIRE(FileUtility::write_file(tmp_file, test_text) == OMICSDS_OK);
 
       SECTION("test iterated getline", "[utility FileUtility read getline]") {
         FileUtility fu = FileUtility(tmp_file);
@@ -110,29 +118,29 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
         SECTION("test small read") {
           char buf[256];
           size_t read_size = 5;
-          REQUIRE(fu.read_file(buf, read_size) == TILEDB_OK);
+          REQUIRE(fu.read_file(buf, read_size) == OMICSDS_OK);
           REQUIRE(strncmp(buf, test_text.c_str(), read_size) == 0);
           REQUIRE(fu.chars_read == read_size);
           fu.chars_read = 0;  // Reset for next test
         }
         SECTION("test full read") {
           char buf[256];
-          REQUIRE(fu.read_file(buf, test_text.size()) == TILEDB_OK);
+          REQUIRE(fu.read_file(buf, test_text.size()) == OMICSDS_OK);
           REQUIRE(strncmp(buf, test_text.c_str(), test_text.size()) == 0);
           REQUIRE(fu.chars_read == test_text.size());
           fu.chars_read = 0;  // Reset for next test
         }
         SECTION("test over-extended read") {
           char buf[256];
-          REQUIRE(fu.read_file(buf, 256) == TILEDB_ERR);
+          REQUIRE_THROWS_AS(fu.read_file(buf, 256), OmicsDSStorageException);
           REQUIRE(strncmp(buf, test_text.c_str(), test_text.size()) == 0);
         }
         SECTION("test multiple reads") {
           char buf[256];
           size_t read_size = 4;
-          REQUIRE(fu.read_file(buf, read_size) == TILEDB_OK);
+          REQUIRE(fu.read_file(buf, read_size) == OMICSDS_OK);
           REQUIRE(strncmp(buf, test_text.c_str(), read_size) == 0);
-          REQUIRE(fu.read_file(buf, read_size) == TILEDB_OK);
+          REQUIRE(fu.read_file(buf, read_size) == OMICSDS_OK);
           REQUIRE(strncmp(buf, test_text.c_str() + read_size, read_size) == 0);
         }
       }
@@ -155,7 +163,7 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
           REQUIRE(retval == "line1");
 
           char buf[10];
-          REQUIRE(fu.read_file(buf, strlen("line2\n")) == TILEDB_OK);
+          REQUIRE(fu.read_file(buf, strlen("line2\n")) == OMICSDS_OK);
           REQUIRE(strncmp(buf, "line2\n", strlen("line2\n")) == 0);
           REQUIRE(fu.str_buffer == "");
         }
@@ -168,7 +176,7 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
         for (size_t i = 0; i < 2 * buffer_size; i++) {
           large_string = large_string + "a\n";
         }
-        REQUIRE(FileUtility::write_file(tmp_file, large_string) == TILEDB_OK);
+        REQUIRE(FileUtility::write_file(tmp_file, large_string) == OMICSDS_OK);
         FileUtility fu = FileUtility(tmp_file, buffer_size);
 
         std::string retval;
@@ -181,29 +189,26 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[utility FileUtility]") {
           char buf[1024];
           size_t read_size = fu.str_buffer.size() + 10;
           size_t chars_read = fu.chars_read;
-          REQUIRE(fu.read_file(buf, read_size) == TILEDB_OK);
+          REQUIRE(fu.read_file(buf, read_size) == OMICSDS_OK);
           REQUIRE(chars_read + 10 == fu.chars_read);
           REQUIRE(strncmp(buf, large_string.substr(2, read_size).c_str(), read_size) == 0);
         }
       }
       SECTION("test file bigger than buffer without newline",
               "[utility FileUtility read big-file]") {
-        std::string large_string = "";
-        FileUtility tmp_fu = FileUtility(tmp_file);
-        for (size_t i = 0; i < 2 * tmp_fu.buffer_size; i++) {
-          large_string = large_string + "a";
-        }
-        large_string = large_string + "\n";
-        REQUIRE(FileUtility::write_file(tmp_file, large_string) == TILEDB_OK);
+        size_t large_size = 1024 * 1024;
+        std::string large_string(large_size + 1, 'a');
+        large_string[large_size] = '\n';
+        REQUIRE(FileUtility::write_file(tmp_file, large_string) == OMICSDS_OK);
         FileUtility fu =
             FileUtility(tmp_file);  // Need to recreate the FileUtility class to get new write
 
         std::string retval;
         REQUIRE(fu.generalized_getline(retval));
-        REQUIRE(retval == large_string.substr(0, large_string.size() - 1));
+        REQUIRE(retval == large_string.substr(0, large_size));
       }
       SECTION("test buffer sizes", "[utility FileUtility buffer_size]") {
-        REQUIRE(FileUtility::write_file(tmp_file, test_text) == TILEDB_OK);
+        REQUIRE(FileUtility::write_file(tmp_file, test_text) == OMICSDS_OK);
         SECTION("test file smaller than default", "[utility FileUtility buffer_size]") {
           FileUtility fu = FileUtility(tmp_file);
           REQUIRE(fu.buffer_size == TileDBUtils::file_size(tmp_file));

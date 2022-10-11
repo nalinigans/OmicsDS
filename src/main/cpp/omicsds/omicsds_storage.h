@@ -28,6 +28,7 @@
 
 #include "omicsds_array_metadata.h"
 #include "omicsds_exception.h"
+#include "omicsds_logger.h"
 #include "omicsds_schema.h"
 
 #include <string>
@@ -60,7 +61,7 @@ class OmicsModule {
     if (tiledb_ctx_init(&m_tiledb_ctx, NULL) != TILEDB_OK) {
       logger.fatal(OmicsDSStorageException());
     }
-    if (!TileDBUtils::workspace_exists(m_workspace) &&
+    if (!FileUtility::is_workspace(m_workspace) &&
         tiledb_workspace_create(m_tiledb_ctx, m_workspace.c_str()) != TILEDB_OK) {
       logger.fatal(OmicsDSStorageException());
     }

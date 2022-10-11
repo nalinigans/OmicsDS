@@ -66,6 +66,18 @@ endif()
 
 set(HTSLIB_INSTALL_DIR "" CACHE PATH "Path to htslib install directory")
 
+# Honor visibility properties for all target types.
+# https://www.cmake.org/cmake/help/latest/policy/CMP0063.html
+cmake_policy(SET CMP0063 NEW)
+
+# The DOWNLOAD_EXTRACT_TIMESTAMP option to the ExternalProject_Add() command is used to explicitly specify
+# how timestamps should be handled. The default behavior is to set the timestamps of extracted contents to
+# the time of extraction.
+# https://cmake.org/cmake/help/latest/policy/CMP0135.html#policy:CMP0135
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
 # See https://cmake.org/Wiki/CMake_RPATH_handling#Common_questions
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH True)
 if(APPLE)
@@ -83,8 +95,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND BUILD_FOR_ARCH)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${BUILD_FOR_ARCH}")
 endif()
 
-# 
+# Set stack smashing protection - emits extra code for buffer overlows including local frames.
+# Should check how much of a performance hit this causes.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector-strong")
+
+# Set -fvisibility=hidden
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 # Compiler Warning Options
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

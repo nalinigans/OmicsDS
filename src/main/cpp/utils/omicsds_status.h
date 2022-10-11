@@ -1,5 +1,5 @@
 /**
- * @file   omicsds_message_wrapper.h
+ * @file src/main/cpp/utils/omicsds_status.h
  *
  * @section LICENSE
  *
@@ -27,39 +27,11 @@
  *
  * @section DESCRIPTION
  *
- * Header file for wrapper around protobuf messages to manage loading and saving
+ * OmicsDS Status Header file
  */
 
 #pragma once
 
-#include <memory>
-
-enum MessageFormat {
-  BINARY,
-  JSON,
-};
-
-template <class T>
-class OmicsDSMessage {
- public:
-  OmicsDSMessage(std::string_view path, MessageFormat format = MessageFormat::BINARY);
-  ~OmicsDSMessage();
-
-  /**
-   * Whether or not the wrapped message was loaded from a file.
-   */
-  bool loaded_from_file();
-
-  /**
-   * Returns the underlying message.
-   */
-  std::shared_ptr<T> message();
-
- private:
-  bool save_message();
-  bool parse_message();
-  std::string m_file_path;
-  std::shared_ptr<T> m_message;
-  bool m_loaded_from_file = false;
-  MessageFormat m_format;
-};
+/** Return codes */
+#define OMICSDS_OK 0
+#define OMICDS_ERR -1

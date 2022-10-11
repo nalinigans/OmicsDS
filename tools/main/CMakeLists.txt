@@ -36,7 +36,7 @@ add_executable(omicsds ${CLI_CPP_SOURCES})
 
 target_include_directories(omicsds PRIVATE
   ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-  ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
+  ${CMAKE_SOURCE_DIR}/src/main/cpp/omicsds
   ${CMAKE_SOURCE_DIR}/src/main/cpp/utils
   )
 
