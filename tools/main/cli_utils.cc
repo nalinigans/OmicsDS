@@ -31,10 +31,12 @@
  */
 
 #include "omicsds_cli.h"
+#include "omicsds_file_utils.h"
 #include "omicsds_logger.h"
 #include "omicsds_samplemap.h"
 
 #include <iostream>
+#include <string>
 
 ACTION get_action(int argc, char* argv[]) {
   if (argc < 2) {
@@ -114,38 +116,57 @@ void LongOptions::populate_query_options() {
   }
 }
 
+MatrixFileProcessor::~MatrixFileProcessor() {
+  write("\n");
+  flush_buffer();
+}
+
 void MatrixFileProcessor::set_inverse_sample_map(std::string_view sample_map_file) {
   m_inverse_sample_map = SampleMap(sample_map_file.data()).invert_sample_map(true);
 }
 
+void MatrixFileProcessor::flush_buffer() {
+  m_str_buf[m_buf_offset] = '\0';
+  FileUtility::write_file(m_output_file, m_str_buf.data());
+  m_buf_offset = 0;
+}
+
+void MatrixFileProcessor::write(const std::string& str) {
+  if (str.length() + m_buf_offset >= BUFFER_SIZE - 1) {
+    flush_buffer();
+  }
+  strncpy(m_str_buf.data() + m_buf_offset, str.data(), str.length());
+  m_buf_offset += str.length();
+}
+
 void MatrixFileProcessor::process(const std::string& feature_id, uint64_t sample_id, float score) {
   if (m_first_entry) {
-    *m_output_stream << "SAMPLE";
+    write("SAMPLE");
     m_prev_feature_id = feature_id;
     m_first_entry = false;
   }
   if (m_prev_feature_id != feature_id) {
     if (m_first_row) {
-      *m_output_stream << "\n" << m_prev_feature_id;
+      write(logger.format("\n{}", m_prev_feature_id));
       for (float score : m_scores) {
-        *m_output_stream << "\t" << score;
+        write(logger.format("\t{:f}", score));
       }
       m_first_row = false;
       m_scores.clear();  // Free up fields now that we don't need them
       m_inverse_sample_map = NULL;
     }
-    *m_output_stream << "\n" << feature_id;
+    write(logger.format("\n{}", feature_id));
     m_prev_feature_id = feature_id;
   }
   if (m_first_row) {
     m_scores.emplace_back(score);
     if (m_inverse_sample_map != NULL) {
-      *m_output_stream << "\t" << m_inverse_sample_map->at(sample_id);
+      write(logger.format("\t{}", m_inverse_sample_map->at(sample_id)));
     } else {
-      *m_output_stream << "\t" << sample_id;
+      write(logger.format("\t{}", sample_id));
     }
   } else {
-    *m_output_stream << "\t" << score;
+    write(logger.format("\t{:f}", score));
   }
 }
 

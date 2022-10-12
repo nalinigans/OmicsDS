@@ -31,6 +31,7 @@ if ((NOT DEFINED ENV{RUNNER_OS}) OR (NOT $ENV{RUNNER_OS} STREQUAL "Linux"))
     ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
     ${CMAKE_SOURCE_DIR}/src/main/cpp/api
     ${CMAKE_SOURCE_DIR}/src/main/cpp/utils
+    ${CMAKE_SOURCE_DIR}/src/test/cpp
     ${PROTOBUF_GENERATED_CXX_HDRS_INCLUDE_DIRS}
     )
 

@@ -108,12 +108,19 @@ bool get_option(const std::map<char, std::string_view>& opt_map, const char key,
  */
 class MatrixFileProcessor {
  public:
-  MatrixFileProcessor(std::ostream* output_stream) : m_output_stream(output_stream) {}
+  MatrixFileProcessor(const std::string& output_file) : m_output_file(output_file) {}
+  ~MatrixFileProcessor();
   void process(const std::string& feature_id, uint64_t sample_id, float score);
   void set_inverse_sample_map(std::string_view sample_map_file);
 
  private:
-  std::ostream* m_output_stream;
+  void write(const std::string& str);
+  void flush_buffer();
+
+  static const uint64_t BUFFER_SIZE = 1000 * 1000 * 1000;
+  size_t m_buf_offset = 0;
+  std::vector<char> m_str_buf = std::vector(BUFFER_SIZE, '\0');
+  std::string m_output_file;
   bool m_first_row = true;
   bool m_first_entry = true;
   std::string m_prev_feature_id;

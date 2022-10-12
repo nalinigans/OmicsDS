@@ -31,8 +31,10 @@
  */
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
+#include "test_base.h"
 
 #include "omicsds_cli.h"
+#include "omicsds_file_utils.h"
 #include "omicsds_logger.h"
 
 #define ARGC(arr) sizeof(arr) / sizeof(char*)
@@ -138,27 +140,42 @@ TEST_CASE("test CLI", "[cli]") {
   }
 }
 
-TEST_CASE("test MatrixFileProcessor", "[cli query matrix]") {
-  SECTION("test matrix file process", "[cli query matrix]") {
-    std::stringstream output;
-    MatrixFileProcessor fp(&output);
-    fp.process("Feature 1", 0, 1.1);
-    fp.process("Feature 1", 1, 2.1);
-    fp.process("Feature 2", 0, 1.2);
-    fp.process("Feature 2", 1, 2.2);
+void check_file(const std::string& file_name, const std::string& expected_output) {
+  FileUtility reader = FileUtility(file_name);
+  size_t file_size = reader.file_size;
+  char* buffer = new char[file_size + 1];
+  reader.read_file(buffer, file_size);
+  buffer[file_size] = '\0';
+  REQUIRE(std::string(buffer) == expected_output);
+  delete buffer;
+}
 
-    REQUIRE(output.str() == "SAMPLE\t0\t1\nFeature 1\t1.1\t2.1\nFeature 2\t1.2\t2.2");
+TEST_CASE_METHOD(TempDir, "test MatrixFileProcessor", "[cli query matrix]") {
+  SECTION("test matrix file process", "[cli query matrix]") {
+    std::string output_file = append("matrix-file-base");
+    {
+      MatrixFileProcessor fp(output_file);
+      fp.process("Feature 1", 0, 1.1);
+      fp.process("Feature 1", 1, 2.1);
+      fp.process("Feature 2", 0, 1.2);
+      fp.process("Feature 2", 1, 2.2);
+    }
+    check_file(output_file,
+               "SAMPLE\t0\t1\nFeature 1\t1.100000\t2.100000\nFeature 2\t1.200000\t2.200000\n");
   }
 
   SECTION("test sample map", "[cli query matrix]") {
-    std::stringstream output;
-    MatrixFileProcessor fp(&output);
-    fp.set_inverse_sample_map(std::string(OMICSDS_TEST_INPUTS) + "small_map");
-    fp.process("Feature 1", 0, 1.1);
-    fp.process("Feature 1", 1, 2.1);
-    fp.process("Feature 2", 0, 1.2);
-    fp.process("Feature 2", 1, 2.2);
-
-    REQUIRE(output.str() == "SAMPLE\tSample0\tSample1\nFeature 1\t1.1\t2.1\nFeature 2\t1.2\t2.2");
+    std::string output_file = append("matrix-files-sample-map");
+    {
+      MatrixFileProcessor fp(output_file);
+      fp.set_inverse_sample_map(std::string(OMICSDS_TEST_INPUTS) + "small_map");
+      fp.process("Feature 1", 0, 1.1);
+      fp.process("Feature 1", 1, 2.1);
+      fp.process("Feature 2", 0, 1.2);
+      fp.process("Feature 2", 1, 2.2);
+    }
+    check_file(
+        output_file,
+        "SAMPLE\tSample0\tSample1\nFeature 1\t1.100000\t2.100000\nFeature 2\t1.200000\t2.200000\n");
   }
 }

@@ -84,6 +84,16 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range,
                              sizes);                       // Buffer sizes
 
   std::vector<OmicsFieldData> data(m_schema->attributes.size());
+
+  // Presize the non-variable sized data fields
+  auto attributes_it = m_schema->attributes.begin();
+  auto data_it = data.begin();
+  for (; attributes_it != m_schema->attributes.end() && data_it != data.end();
+       attributes_it++, data_it++) {
+    if (!attributes_it->second.is_variable()) {
+      data_it->data.resize(attributes_it->second.element_size());
+    }
+  }
   std::array<uint64_t, 3> coords;
 
   const uint8_t* a1_v;
@@ -98,9 +108,17 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range,
           tiledb_array_it,      // Array iterator
           i,                    // Attribute id
           (const void**)&a1_v,  // Value
-          &a1_size);            // Value size (useful in variable-sized attributes)
+          &a1_size);            // Value size (useful in variable-sized attributes);
 
-      data[i].data = std::vector<uint8_t>(a1_v, a1_v + a1_size);
+      if (rc == TILEDB_ERR) {
+        logger.fatal(OmicsDSStorageException(
+            logger.format("Failed to read value from array at {}", array_name)));
+      }
+
+      if (a.second.is_variable()) {
+        data[i].data.resize(a1_size);
+      }
+      memcpy(data[i].data.data(), a1_v, a1_size);
 
       // Print value (if not a deletion)
       /* if(*a1_v != TILEDB_EMPTY_INT8) {

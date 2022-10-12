@@ -68,7 +68,7 @@ int query_main(int argc, char* argv[], LongOptions long_options) {
     std::array<int64_t, 2> sample_range = {0, std::numeric_limits<int64_t>::max()};
     std::vector<std::string> features = {};
 
-    MatrixFileProcessor file_processor(&std::cout);
+    MatrixFileProcessor file_processor("/dev/stdout");
     feature_process_fn_t feature_processor;
     if (opt_map.count(EXPORT_MATRIX) == 1) {
       if (opt_map.count(SAMPLE_MAP) == 1) {
