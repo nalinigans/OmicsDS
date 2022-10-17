@@ -25,3 +25,6 @@
 #
 
 add_subdirectory(cpp)
+add_test(NAME cli_tools_test
+         COMMAND test_cli.sh ${CMAKE_SOURCE_DIR}/src/test/inputs/OmicsDSTests ${CMAKE_CURRENT_BINARY_DIR}/../main
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

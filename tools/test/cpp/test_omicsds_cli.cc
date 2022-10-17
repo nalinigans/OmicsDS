@@ -147,7 +147,7 @@ void check_file(const std::string& file_name, const std::string& expected_output
   reader.read_file(buffer, file_size);
   buffer[file_size] = '\0';
   REQUIRE(std::string(buffer) == expected_output);
-  delete buffer;
+  delete[] buffer;
 }
 
 TEST_CASE_METHOD(TempDir, "test MatrixFileProcessor", "[cli query matrix]") {

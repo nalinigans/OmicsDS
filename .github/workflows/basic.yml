@@ -38,7 +38,6 @@ env:
   CMAKE_BUILD_TYPE: Coverage
   CMAKE_BUILD_DIR: ${{github.workspace}}/build
   PROTOBUF_VERSION: 3.21.6
-  OMICSDS_ROOT_DIR: ${{github.workspace}}
 
 jobs:
   lint-cpp:
@@ -114,7 +113,6 @@ jobs:
                                 -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION
         make -j4
         make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
-        $GITHUB_WORKSPACE/tools/test/test_cli.sh
         make install
 
     - name: Build - MacOS
@@ -132,7 +130,6 @@ jobs:
                                 -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION
         make -j4
         make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
-        $GITHUB_WORKSPACE/tools/test/test_cli.sh
         make install
       env:
         OPENSSL_ROOT_DIR: /usr/local/opt/openssl@1.1
