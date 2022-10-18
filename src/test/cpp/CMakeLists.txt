@@ -38,15 +38,16 @@ set(LINK_DEPENDENCIES
         ${CMAKE_DL_LIBS})
 
 set(CPP_TEST_SOURCES
-        test_omicsds_loader.cc
-        test_omics_field_data.cc
-        test_file_utility.cc
         test_api.cc
-        test_logger.cc
         test_encoder.cc
+        test_file_utility.cc
+        test_logger.cc
         test_matrix_loader.cc
+        test_message_wrapper.cc
+        test_omics_field_data.cc
+        test_omicsds_configure.cc
         test_omicsds_import_config.cc
-        test_omicsds_configure.cc)
+        test_omicsds_loader.cc)
 
 # ctests for library
 add_executable(ctests_lib ${CPP_TEST_SOURCES})

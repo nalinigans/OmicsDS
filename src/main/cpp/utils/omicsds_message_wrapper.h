@@ -33,6 +33,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <string_view>
 
 enum MessageFormat {
   BINARY,
@@ -56,8 +58,8 @@ class OmicsDSMessage {
   std::shared_ptr<T> message();
 
  private:
-  bool save_message();
-  bool parse_message();
+  void save_message();
+  void parse_message();
   std::string m_file_path;
   std::shared_ptr<T> m_message;
   bool m_loaded_from_file = false;

@@ -30,30 +30,34 @@
  * Implementation file for wrapper around protobuf messages to manage loading and saving
  */
 
-#include "tiledb_constants.h"
-#include "tiledb_utils.h"
-
+#include "omicsds_message_wrapper.h"
 #include "omicsds_array_metadata.pb.h"
+#include "omicsds_exception.h"
 #include "omicsds_file_utils.h"
 #include "omicsds_import_config.pb.h"
 #include "omicsds_logger.h"
-#include "omicsds_message_wrapper.h"
 
 #include <google/protobuf/util/json_util.h>
 
 template <typename T>
 OmicsDSMessage<T>::OmicsDSMessage(std::string_view path, MessageFormat format)
     : m_file_path(path), m_message(std::make_shared<T>()), m_format(format) {
-  m_loaded_from_file = TileDBUtils::is_file(m_file_path) && parse_message();
-  if (!m_loaded_from_file) {
-    logger.info("Failed to load message from path {}.", m_file_path);
+  if (FileUtility::is_file(m_file_path)) {
+    parse_message();
+    m_loaded_from_file = true;
+  } else {
+    logger.debug("No message file to load at path {}.", m_file_path);
   }
 }
 
 template <typename T>
 OmicsDSMessage<T>::~OmicsDSMessage() {
-  if (!save_message()) {
-    logger.error("Failed to save message to path {}.", m_file_path);
+  try {
+    save_message();
+  } catch (const OmicsDSException& e) {
+    logger.error("{}", e.what());
+  } catch (const OmicsDSStorageException& e) {
+    logger.error("{}", e.what());
   }
 }
 
@@ -68,7 +72,7 @@ std::shared_ptr<T> OmicsDSMessage<T>::message() {
 }
 
 template <typename T>
-bool OmicsDSMessage<T>::save_message() {
+void OmicsDSMessage<T>::save_message() {
   std::string message_string;
   bool serialized = false;
   switch (m_format) {
@@ -82,15 +86,19 @@ bool OmicsDSMessage<T>::save_message() {
               .ok();
       break;
   }
-  return serialized && FileUtility::write_file(m_file_path, message_string, true) == TILEDB_OK;
+  if (!serialized) {
+    logger.fatal(OmicsDSException(), "Failed to serialize message to string.");
+  }
+  FileUtility::write_file(m_file_path, message_string, true);
 }
 
 template <typename T>
-bool OmicsDSMessage<T>::parse_message() {
+void OmicsDSMessage<T>::parse_message() {
   FileUtility reader = FileUtility(m_file_path);
   size_t size = reader.file_size;
   void* buf = new unsigned char[size];
-  bool file_read = reader.read_file(buf, size) == TILEDB_OK;
+  reader.read_file(buf, size);
+
   bool parsed = false;
   switch (m_format) {
     case MessageFormat::BINARY:
@@ -103,7 +111,9 @@ bool OmicsDSMessage<T>::parse_message() {
                    .ok();
       break;
   }
-  return file_read && parsed;
+  if (!parsed) {
+    logger.fatal(OmicsDSException(), "Failed to parse message at path {}.", m_file_path);
+  }
 }
 
 template class OmicsDSMessage<ArrayMetadata>;
