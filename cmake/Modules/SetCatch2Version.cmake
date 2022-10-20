@@ -1,5 +1,5 @@
 #
-# CMakeLists.txt
+# cmake/Modules/SetCatch2Version.cmake
 #
 # The MIT License
 #
@@ -23,32 +23,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+# Find Catch2 installation and setup Catch2 version to allow
+# catch.h to support both major versions, 2 and 3 for now.
+#
 
-if ((NOT DEFINED ENV{RUNNER_OS}) OR (NOT $ENV{RUNNER_OS} STREQUAL "Linux"))
-
-  set(CPP_INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
-    ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-    ${CMAKE_SOURCE_DIR}/src/main/cpp/utils
-    ${CMAKE_SOURCE_DIR}/src/test/cpp
-    ${PROTOBUF_GENERATED_CXX_HDRS_INCLUDE_DIRS}
-    )
-
-  set(LINK_DEPENDENCIES
-    omicsds_static
-    ${CATCH2_TARGET}
-    ${OMICSDS_DEPENDENCIES}
-    ${CMAKE_DL_LIBS})
-
-  # ctests for cli
-  set(OMICDS_TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools/main")
-  set(CPP_CLI_TEST_SOURCES
-    test_driver.cc
-    test_import_config.cc
-    test_omicsds_cli.cc)
-  add_executable(ctests_cli ${CPP_CLI_TEST_SOURCES} ${OMICDS_TOOLS_DIR}/cli_utils.cc)
-  target_include_directories(ctests_cli PRIVATE ${CPP_INCLUDE_DIRS} ${OMICDS_TOOLS_DIR})
-  target_compile_definitions(ctests_cli PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
-  target_link_libraries(ctests_cli ${LINK_DEPENDENCIES})
-  add_test(ctests_cli ctests_cli -d yes)
+find_package(Catch2 REQUIRED)
+set(CATCH2_HEADER "catch2/catch.hpp")
+unset(HEADER_PATH CACHE)
+find_path(HEADER_PATH ${CATCH2_HEADER})
+if(HEADER_PATH)
+  set(CATCH2_MAJOR_VERSION 2)
+  set(CATCH2_TARGET Catch2::Catch2)
+else()
+  set(CATCH2_HEADER "catch2/catch_all.hpp")
+  find_path(HEADER_PATH ${CATCH2_HEADER})
+  if(HEADER_PATH)
+    set(CATCH2_MAJOR_VERSION 3)
+    set(CATCH2_TARGET Catch2::Catch2WithMain)
+  else()
+    message(FATAL "Could not figure out Catch2 versions. Try using CMAKE_PREFIX_PATH to point to a Catch2 installation")
+  endif()
 endif()
+
+message(STATUS "Found Catch2: ${CATCH2_INCLUDE_FILE}/${CATCH2_HEADER} Version=${CATCH2_MAJOR_VERSION}")
+add_definitions(-DCATCH2_MAJOR_VERSION=${CATCH2_MAJOR_VERSION})

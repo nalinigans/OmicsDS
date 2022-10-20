@@ -1,6 +1,4 @@
 /**
- * src/test/cpp/test_omicsds_loader.cc
- *
  * The MIT License (MIT)
  * Copyright (c) 2022 Omics Data Automation, Inc.
  *
@@ -20,21 +18,6 @@
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * Test generic SAM reader
  */
-
+#define CATCH_CONFIG_MAIN  // This is a no-op in Catch2 v3, so for simplicity it is not guarded
 #include "catch.h"
-#include "test_base.h"
-
-#include "omicsds_loader.h"
-
-TEST_CASE("test generic SAM reader", "[test_basic]") {
-  read_sam_file(std::string(OMICSDS_TEST_INPUTS) + "empty.sam");
-}
-
-TEST_CASE_METHOD(TempDir, "test using temp dir", "[test_temp_dir]") {
-  CHECK(TileDBUtils::is_dir(get_temp_dir()));
-  std::string workspace_path = append("workspace");
-  REQUIRE(!TileDBUtils::workspace_exists(workspace_path));
-}

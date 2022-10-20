@@ -29,7 +29,7 @@
  *
  * Test the omicsds CLI import config generation
  */
-#include <catch2/catch.hpp>
+#include "catch.h"
 
 #include "omicsds_cli.h"
 

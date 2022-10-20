@@ -30,7 +30,7 @@
  * Test gtf ids encoding and decoding
  */
 
-#include <catch2/catch.hpp>
+#include "catch.h"
 #include "test_base.h"
 
 #include "omicsds_array_metadata.pb.h"

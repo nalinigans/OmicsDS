@@ -30,7 +30,7 @@
  * Test the OmicsDS api class
  */
 
-#include <catch2/catch.hpp>
+#include "catch.h"
 #include "test_base.h"
 
 #include "omicsds.h"
@@ -99,7 +99,7 @@ TEST_CASE("test basic query", "[basic-feature-query]") {
   }
 
   SECTION("With one feature, check various sub-sample ranges") {
-    for (auto i = 0; i < 152; i++) {
+    for (size_t i = 0; i < 152; i++) {
       sub_sample_range[0] = i;
       sub_sample_range[1] = 303 - i;
       CheckCells check;

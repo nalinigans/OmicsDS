@@ -24,7 +24,7 @@
  * Test generic SAM reader
  */
 
-#include <catch2/catch.hpp>
+#include "catch.h"
 #include "test_base.h"
 
 #include "omicsds_exception.h"
@@ -211,7 +211,9 @@ TEST_CASE_METHOD(TempDir, "test FileUtility", "[test-file-utility]") {
         REQUIRE(FileUtility::write_file(tmp_file, test_text) == OMICSDS_OK);
         SECTION("test file smaller than default", "[utility FileUtility buffer_size]") {
           FileUtility fu = FileUtility(tmp_file);
-          REQUIRE(fu.buffer_size == TileDBUtils::file_size(tmp_file));
+          ssize_t file_size = TileDBUtils::file_size(tmp_file);
+          REQUIRE(file_size >= 0);
+          REQUIRE(fu.buffer_size == (size_t)file_size);
         }
 
         SECTION("test custom buffer size", "[utility FileUtility buffer_size]") {

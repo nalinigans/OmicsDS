@@ -30,7 +30,7 @@
  * Test OmicsDS configurer
  */
 
-#include <catch2/catch.hpp>
+#include "catch.h"
 #include "test_base.h"
 
 #include "omicsds_configure.h"

@@ -23,7 +23,7 @@
  *
  * Test OmicsDSMessageWrapper
  */
-#include <catch2/catch.hpp>
+#include "catch.h"
 #include "test_base.h"
 
 #include "omicsds_array_metadata.h"

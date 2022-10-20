@@ -29,8 +29,7 @@
  *
  * Test the omicsds CLI functions
  */
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include "catch.h"
 #include "test_base.h"
 
 #include "omicsds_cli.h"
@@ -80,8 +79,8 @@ TEST_CASE("test CLI", "[cli]") {
       std::map<char, std::string_view> opt_map;
       optind = 1;
       REQUIRE(parse_args(ARGC(argv), argv, long_options, "o:p:", opt_map));
-      REQUIRE(opt_map['o'] == o_arg);
-      REQUIRE(opt_map['p'] == p_arg);
+      REQUIRE(opt_map['o'].data() == o_arg);
+      REQUIRE(opt_map['p'].data() == p_arg);
     }
     SECTION("test long option parser", "[cli parse_args short]") {
       char* argv[] = {
@@ -90,8 +89,8 @@ TEST_CASE("test CLI", "[cli]") {
       std::map<char, std::string_view> opt_map;
       optind = 1;
       REQUIRE(parse_args(ARGC(argv), argv, long_options, "o:p:", opt_map));
-      REQUIRE(opt_map['o'] == o_arg);
-      REQUIRE(opt_map['p'] == p_arg);
+      REQUIRE(opt_map['o'].data() == o_arg);
+      REQUIRE(opt_map['p'].data() == p_arg);
     }
     SECTION("test option parser error", "[cli parse_args error]") {
       char* argv[] = {(char*)"prog", (char*)"-u"};
@@ -107,12 +106,12 @@ TEST_CASE("test CLI", "[cli]") {
     SECTION("get_option key not present", "[cli get_option error]") {
       std::string_view not_present = "not_present";
       REQUIRE(!get_option(opt_map, 'a', not_present));
-      REQUIRE(not_present == std::string_view("not_present"));
+      REQUIRE(not_present.data() == std::string("not_present"));
     }
     SECTION("get_option key present", "[cli get_option]") {
       std::string_view present = "present";
       REQUIRE(get_option(opt_map, 'w', present));
-      REQUIRE(present == std::string_view("workspace"));
+      REQUIRE(present.data() == std::string("workspace"));
     }
   }
   SECTION("test long_option wrapper", "[cli long_option]") {

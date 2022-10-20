@@ -166,6 +166,9 @@ include_directories(${TILEDB_INCLUDE_DIR})
 find_package(ProtobufWrapper REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
+# Catch2
+include(SetCatch2Version)
+
 set(OMICSDS_DEPENDENCIES
   ${HTSLIB_LIBRARY}
   ${TILEDB_LIBRARY}

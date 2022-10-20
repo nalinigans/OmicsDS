@@ -25,7 +25,6 @@
 #
 
 
-include_directories(Catch INTERFACE ${CMAKE_SOURCE_DIR}/dependencies/Catch2/single_include)
 
 set(CPP_INCLUDE_DIRS
         ${CMAKE_SOURCE_DIR}/src/main/cpp/omicsds
@@ -34,11 +33,13 @@ set(CPP_INCLUDE_DIRS
 
 set(LINK_DEPENDENCIES
         omicsds_static
+        ${CATCH2_TARGET}
         ${OMICSDS_DEPENDENCIES}
         ${CMAKE_DL_LIBS})
 
 set(CPP_TEST_SOURCES
         test_api.cc
+        test_driver.cc
         test_encoder.cc
         test_file_utility.cc
         test_logger.cc

@@ -1,5 +1,5 @@
 #
-# CMakeLists.txt
+# install_catch2.sh
 #
 # The MIT License
 #
@@ -24,31 +24,25 @@
 # THE SOFTWARE.
 #
 
-if ((NOT DEFINED ENV{RUNNER_OS}) OR (NOT $ENV{RUNNER_OS} STREQUAL "Linux"))
+#!/bin/bash
 
-  set(CPP_INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}/src/main/cpp/loader
-    ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-    ${CMAKE_SOURCE_DIR}/src/main/cpp/utils
-    ${CMAKE_SOURCE_DIR}/src/test/cpp
-    ${PROTOBUF_GENERATED_CXX_HDRS_INCLUDE_DIRS}
-    )
+# Error out on first failure
+set -e
 
-  set(LINK_DEPENDENCIES
-    omicsds_static
-    ${CATCH2_TARGET}
-    ${OMICSDS_DEPENDENCIES}
-    ${CMAKE_DL_LIBS})
+INSTALL_DIR=${INSTALL_DIR:-/usr/local}
+CATCH2_VER=${CATCH2_VER:-v3.1.0}
 
-  # ctests for cli
-  set(OMICDS_TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools/main")
-  set(CPP_CLI_TEST_SOURCES
-    test_driver.cc
-    test_import_config.cc
-    test_omicsds_cli.cc)
-  add_executable(ctests_cli ${CPP_CLI_TEST_SOURCES} ${OMICDS_TOOLS_DIR}/cli_utils.cc)
-  target_include_directories(ctests_cli PRIVATE ${CPP_INCLUDE_DIRS} ${OMICDS_TOOLS_DIR})
-  target_compile_definitions(ctests_cli PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
-  target_link_libraries(ctests_cli ${LINK_DEPENDENCIES})
-  add_test(ctests_cli ctests_cli -d yes)
-endif()
+if [[ $INSTALL_DIR == "/usr/local" ]]; then
+  SUDO="sudo"
+  INSTALL_PREFIX=""
+else
+  SUDO=""
+  INSTALL_PREFIX="-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR"
+fi
+
+if [[ ! -d $INSTALL_DIR/include/catch2 ]]; then
+  git clone https://github.com/catchorg/Catch2.git -b $CATCH2_VER
+  cd Catch2
+  cmake -Bbuild -H. -DBUILD_TESTING=OFF $INSTALL_PREFIX
+  $SUDO cmake --build build/ --target install
+fi

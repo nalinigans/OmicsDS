@@ -1,6 +1,4 @@
 /**
- * src/test/cpp/test_omicsds_loader.cc
- *
  * The MIT License (MIT)
  * Copyright (c) 2022 Omics Data Automation, Inc.
  *
@@ -20,21 +18,14 @@
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * Test generic SAM reader
  */
 
-#include "catch.h"
-#include "test_base.h"
+#pragma once
 
-#include "omicsds_loader.h"
-
-TEST_CASE("test generic SAM reader", "[test_basic]") {
-  read_sam_file(std::string(OMICSDS_TEST_INPUTS) + "empty.sam");
-}
-
-TEST_CASE_METHOD(TempDir, "test using temp dir", "[test_temp_dir]") {
-  CHECK(TileDBUtils::is_dir(get_temp_dir()));
-  std::string workspace_path = append("workspace");
-  REQUIRE(!TileDBUtils::workspace_exists(workspace_path));
-}
+#if CATCH2_MAJOR_VERSION == 3
+#include <catch2/catch_test_macros.hpp>
+#elif CATCH2_MAJOR_VERSION == 2
+#include <catch2/catch.hpp>
+#else
+#error Could not figure out CATCH2_MAJOR_VERSION
+#endif

@@ -30,7 +30,7 @@
  * Test the Logger class
  */
 
-#include <catch2/catch.hpp>
+#include "catch.h"
 
 #include "omicsds_logger.h"
 

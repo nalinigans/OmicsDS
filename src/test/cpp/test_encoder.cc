@@ -30,7 +30,7 @@
  * Test gtf ids encoding and decoding
  */
 
-#include <catch2/catch.hpp>
+#include "catch.h"
 
 #include "omicsds_encoder.h"
 
