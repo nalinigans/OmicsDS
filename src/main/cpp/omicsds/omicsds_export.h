@@ -1,6 +1,6 @@
 #pragma once
 
-#include "omicsds_storage.h"
+#include "omicsds_module.h"
 
 #include <functional>
 
@@ -9,12 +9,11 @@ typedef std::function<void(const std::array<uint64_t, 3>& coords,
     process_function;
 
 // used to query from OmicsDS
-class OmicsExporter : public OmicsModule {
+class OmicsExporter : public OmicsDSModule {
  public:
   OmicsExporter(const std::string& workspace, const std::string& array)
-      : OmicsModule(workspace, array) {
+      : OmicsDSModule(workspace, array) {
     deserialize_schema();
-    tiledb_open_array(TILEDB_ARRAY_READ);
   }
 
   virtual ~OmicsExporter() {}

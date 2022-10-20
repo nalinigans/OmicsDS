@@ -27,11 +27,13 @@
 
 #include <string_view>
 
-#include "omicsds_storage.h"
+#include "omicsds_module.h"
+#include "omicsds_status.h"
 
-class OmicsDSConsolidate : OmicsModule {
+class OmicsDSConsolidate : OmicsDSModule {
  public:
-  OmicsDSConsolidate(std::string_view workspace, std::string_view array);
+  OmicsDSConsolidate(std::string_view workspace, std::string_view array)
+      : OmicsDSModule(workspace, array) {}
 
-  bool consolidate();
+  bool consolidate() { return m_array_storage->consolidate() == OMICSDS_OK; }
 };

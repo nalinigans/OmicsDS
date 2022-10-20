@@ -36,19 +36,10 @@
 #include <vector>
 
 #include "omicsds_file_utils.h"
-#include "tiledb_constants.h"
+
+#include <limits.h>
 
 #define OMICSDS_VERSION "v1"
-
-#define CHECK_RC(...)                                      \
-  do {                                                     \
-    int rc = __VA_ARGS__;                                  \
-    if (rc) {                                              \
-      printf("%s", &tiledb_errmsg[0]);                     \
-      printf("[Examples::%s] Runtime Error.\n", __FILE__); \
-      return rc;                                           \
-    }                                                      \
-  } while (false)
 
 // datastructure that keeps contigs sorted by name and position
 class GenomicMap {
@@ -61,7 +52,7 @@ class GenomicMap {
   GenomicMap(std::shared_ptr<FileUtility> mapping_reader);
   // Initialize the GenomicMap using mapping_reader to read the underlying file
   void initialize(std::shared_ptr<FileUtility> mapping_reader);
-  // map from contig_name and offset to single coordinate for use in tiledb
+  // map from contig_name and offset to single coordinate for use as array storage as in TileDB
   uint64_t flatten(std::string contig_name, uint64_t offset);
   // reverse of flatten
   std::pair<std::string, uint64_t> unflatten(uint64_t position);
@@ -98,7 +89,7 @@ class GenomicMap {
 };
 
 // struct to store type/length information about fields
-// also provides utility fucntions to go to/from string/tiledb types
+// also provides utility functions to go to/from string/tiledb types
 struct OmicsFieldInfo {
   enum OmicsFieldType {
     omics_char,
@@ -114,93 +105,37 @@ struct OmicsFieldInfo {
   };
 
   // OmicsFieldInfo treats negative lengths as variable
-  OmicsFieldInfo(OmicsFieldType type, int _length) : type(type) {
-    if (_length < 0) {
-      length = TILEDB_VAR_NUM;
-    } else {
-      length = _length;
-    }
-  }
+  OmicsFieldInfo(OmicsFieldType type, int _length) : type(type), length(_length) {}
 
   // string constructor, used when deserializing human readable schema
-  OmicsFieldInfo(const std::string& stype, int _length) {
-    if (_length < 0) {
-      length = TILEDB_VAR_NUM;
-    } else {
-      length = _length;
-    }
+  OmicsFieldInfo(const std::string& stype, int _length) : length(_length) {
     if (stype == "omics_char") {
       type = omics_char;
-      return;
-    }
-    if (stype == "omics_uint8_t") {
+    } else if (stype == "omics_uint8_t") {
       type = omics_uint8_t;
-      return;
-    }
-    if (stype == "omics_int8_t") {
+    } else if (stype == "omics_int8_t") {
       type = omics_int8_t;
-      return;
-    }
-    if (stype == "omics_uint16_t") {
+    } else if (stype == "omics_uint16_t") {
       type = omics_uint16_t;
-      return;
-    }
-    if (stype == "omics_int16_t") {
+    } else if (stype == "omics_int16_t") {
       type = omics_int16_t;
-      return;
-    }
-    if (stype == "omics_uint32_t") {
+    } else if (stype == "omics_uint32_t") {
       type = omics_uint32_t;
-      return;
-    }
-    if (stype == "omics_int32_t") {
+    } else if (stype == "omics_int32_t") {
       type = omics_int32_t;
-      return;
-    }
-    if (stype == "omics_uint64_t") {
+    } else if (stype == "omics_uint64_t") {
       type = omics_uint64_t;
-      return;
-    }
-    if (stype == "omics_int64_t") {
+    } else if (stype == "omics_int64_t") {
       type = omics_int64_t;
-      return;
-    }
-    if (stype == "omics_float_t") {
+    } else if (stype == "omics_float_t") {
       type = omics_float_t;
-      return;
+    } else {
+      type = omics_uint8_t;
     }
-    type = omics_uint8_t;
-    return;
   }
 
   OmicsFieldType type;
   int length;  // number of elements, -1 encodes variable
-
-  int tiledb_type() const {
-    switch (type) {
-      case omics_char:
-        return TILEDB_CHAR;
-      case omics_uint8_t:
-        return TILEDB_UINT8;
-      case omics_int8_t:
-        return TILEDB_INT8;
-      case omics_uint16_t:
-        return TILEDB_UINT16;
-      case omics_int16_t:
-        return TILEDB_INT16;
-      case omics_uint32_t:
-        return TILEDB_UINT32;
-      case omics_int32_t:
-        return TILEDB_INT32;
-      case omics_uint64_t:
-        return TILEDB_UINT64;
-      case omics_int64_t:
-        return TILEDB_INT64;
-      case omics_float_t:
-        return TILEDB_FLOAT32;
-    }
-    return TILEDB_CHAR;
-  }
 
   // used to serialize schema
   std::string type_to_string() const {
@@ -230,7 +165,7 @@ struct OmicsFieldInfo {
   }
 
   std::string length_to_string() const {
-    if (length == TILEDB_VAR_NUM) {
+    if (length < 0) {
       return "variable";
     }
     return std::to_string(length);
@@ -262,7 +197,7 @@ struct OmicsFieldInfo {
     return 1;
   }
 
-  bool is_variable() { return length == TILEDB_VAR_NUM; }
+  bool is_variable() const { return length < 0; }
 
   bool operator==(const OmicsFieldInfo& o) { return type == o.type && length == o.length; }
 };
@@ -292,8 +227,8 @@ struct OmicsSchema {
     }
     return retval;
   }
-  std::map<std::string, OmicsFieldInfo>
-      attributes;  // implies canonical order (lexicographically sorted by name)
+  std::map<std::string, OmicsFieldInfo> attributes;  // implies canonical order (lexicographically
+                                                     // sorted by name)
   GenomicMap genomic_map;
   void serialize(std::string path);
   // get index of attribute by name

@@ -59,12 +59,11 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range,
   void** pointers = pointers_vec.data();
   size_t* sizes = sizes_vec.data();
 
-  std::string array_name = m_workspace + "/" + m_array;
-
   auto row_range = m_schema->position_major() ? position_range : sample_range;
   auto col_range = m_schema->position_major() ? sample_range : position_range;
   // int64_t subarray[] = { 0, std::numeric_limits<int64_t>::max(), 0, 0, 0,
   // std::numeric_limits<int64_t>::max() };
+
   int64_t subarray[] = {row_range[0],
                         row_range[1],
                         col_range[0],
@@ -72,92 +71,10 @@ void OmicsExporter::query(std::array<int64_t, 2> sample_range,
                         0,
                         std::numeric_limits<int64_t>::max()};
 
-  TileDB_ArrayIterator* tiledb_array_it;
-  tiledb_array_iterator_init(m_tiledb_ctx,                 // Context
-                             &tiledb_array_it,             // Array iterator
-                             array_name.c_str(),           // Array name
-                             TILEDB_ARRAY_READ,            // Mode
-                             subarray,                     // Constrain in subarray
-                             0,                            // Subset on attributes
-                             m_schema->attributes.size(),  // Number of attributes
-                             pointers,                     // Buffers used internally
-                             sizes);                       // Buffer sizes
-
-  std::vector<OmicsFieldData> data(m_schema->attributes.size());
-
-  // Presize the non-variable sized data fields
-  auto attributes_it = m_schema->attributes.begin();
-  auto data_it = data.begin();
-  for (; attributes_it != m_schema->attributes.end() && data_it != data.end();
-       attributes_it++, data_it++) {
-    if (!attributes_it->second.is_variable()) {
-      data_it->data.resize(attributes_it->second.element_size());
-    }
-  }
-  std::array<uint64_t, 3> coords;
-
-  const uint8_t* a1_v;
-  size_t a1_size = 0;
-  while (!tiledb_array_iterator_end(tiledb_array_it)) {
-    int i = -1;
-    //    std::cout << std::endl << std::endl << "New cell" << std::endl;
-    for (auto& a : m_schema->attributes) {
-      ++i;
-      // Get value
-      int rc = tiledb_array_iterator_get_value(
-          tiledb_array_it,      // Array iterator
-          i,                    // Attribute id
-          (const void**)&a1_v,  // Value
-          &a1_size);            // Value size (useful in variable-sized attributes);
-
-      if (rc == TILEDB_ERR) {
-        logger.fatal(OmicsDSStorageException(
-            logger.format("Failed to read value from array at {}", array_name)));
-      }
-
-      if (a.second.is_variable()) {
-        data[i].data.resize(a1_size);
-      }
-      memcpy(data[i].data.data(), a1_v, a1_size);
-
-      // Print value (if not a deletion)
-      /* if(*a1_v != TILEDB_EMPTY_INT8) {
-        std::cout << "attribute " << a.first << std::endl;
-        printf("%3d\n", *a1_v);
-        std::cout << a.first << " size " << a1_size << std::endl;
-        }*/
-    }
-
-    ++i;
-    uint64_t* coords_ptr;
-    tiledb_array_iterator_get_value(tiledb_array_it,            // Array iterator
-                                    i,                          // Attribute id
-                                    (const void**)&coords_ptr,  // Value
-                                    &a1_size);  // Value size (useful in variable-sized attributes)
-
-    coords = {coords_ptr[0], coords_ptr[1], coords_ptr[2]};
-    coords = m_schema->swap_order(coords);
-
-    // Print value (if not a deletion)
-    /* if(*coords_ptr != TILEDB_EMPTY_INT32) {
-      std::cout << "coords " << coords_ptr[0] << ", " << coords_ptr[1] << ", " << coords_ptr[2] <<
-      std::endl; std::cout << "coords size " << a1_size << std::endl;
-      } */
-
-    if (proc) {
-      proc(coords, data);  // argument function
-    } else {
-      process(coords, data);  // virtual member function
-    }
-
-    // Advance iterator
-    if (tiledb_array_iterator_next(tiledb_array_it)) {
-      exit(1);
-    }
-  }
-
-  // Finalize array
-  tiledb_array_iterator_finalize(tiledb_array_it);
+  m_array_storage->retrieve_by_cell(pointers_vec, sizes_vec, subarray,
+                                    proc ? proc
+                                         : std::bind(&OmicsExporter::process, this,
+                                                     std::placeholders::_1, std::placeholders::_2));
 }
 
 void OmicsExporter::process(const std::array<uint64_t, 3>& coords,

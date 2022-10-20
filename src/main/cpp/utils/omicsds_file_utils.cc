@@ -40,13 +40,13 @@
 #include "tiledb_utils.h"
 
 template <typename... Args>
-void check(int rc, const std::string& tiledb_errmsg, const char* fmt, const Args&... args) {
+void OmicsDSTileDBUtils::check(int rc, const char* fmt, const Args&... args) {
   if (rc) {
-    if (errno > 0) {
-      logger.fatal(OmicsDSStorageException(), "rc={} errno={} ({}) {}", rc, errno,
-                   std::strerror(errno));
+    logger.error(fmt, args...);
+    if (strlen(tiledb_errmsg)) {
+      logger.fatal(OmicsDSStorageException(), "{}", tiledb_errmsg);
     } else {
-      logger.fatal(OmicsDSStorageException(), " rc={}", rc);
+      logger.fatal(OmicsDSStorageException());
     }
   }
 }
@@ -103,7 +103,7 @@ int FileUtility::read_file(void* buffer, size_t chars_to_read) {
     chars_to_read -= buf_position;
   }
   check(TileDBUtils::read_file(filename, chars_read, (char*)buffer + buf_position, chars_to_read),
-        tiledb_errmsg, "Could not read file {} into buffer", filename);
+        "Could not read file {} into buffer", filename);
   chars_read += chars_to_read;
   return OMICSDS_OK;
 }
@@ -116,14 +116,14 @@ bool FileUtility::is_workspace(const std::string& workspace) {
 
 int FileUtility::write_file(const std::string& filename, const std::string& str,
                             const bool overwrite) {
-  check(TileDBUtils::write_file(filename, str.c_str(), str.size(), overwrite), tiledb_errmsg,
+  check(TileDBUtils::write_file(filename, str.c_str(), str.size(), overwrite),
         "Could not write string to file {}", filename);
   return OMICSDS_OK;
 }
 
 int FileUtility::write_file(const std::string& filename, const void* buffer, size_t length,
                             const bool overwrite) {
-  check(TileDBUtils::write_file(filename, buffer, length, overwrite), tiledb_errmsg,
+  check(TileDBUtils::write_file(filename, buffer, length, overwrite),
         "Could not write buffer to file {}", filename);
   return OMICSDS_OK;
 }

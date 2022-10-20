@@ -33,6 +33,7 @@ set(OMICSDS_API_INCLUDE
 set(OMICSDS_INCLUDE_DIRS
   ${OMICSDS_CPP}/omicsds
   ${OMICSDS_CPP}/utils
+  ${OMICSDS_CPP}/storage
   ${OMICSDS_CPP}/api
   )
 
@@ -40,7 +41,7 @@ set(OMICSDS_SOURCES
   ${OMICSDS_CPP}/omicsds/omicsds_loader.cc
   ${OMICSDS_CPP}/omicsds/omicsds_export.cc
   ${OMICSDS_CPP}/omicsds/omicsds_configure.cc
-  ${OMICSDS_CPP}/omicsds/omicsds_consolidate.cc
+  ${OMICSDS_CPP}/storage/omicsds_tiledb_storage.cc
   ${OMICSDS_CPP}/utils/omicsds_encoder.cc
   ${OMICSDS_CPP}/utils/omicsds_logger.cc
   ${OMICSDS_CPP}/utils/omicsds_file_utils.cc

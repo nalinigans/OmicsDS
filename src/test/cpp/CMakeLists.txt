@@ -29,7 +29,8 @@
 set(CPP_INCLUDE_DIRS
         ${CMAKE_SOURCE_DIR}/src/main/cpp/omicsds
         ${CMAKE_SOURCE_DIR}/src/main/cpp/api
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/utils)
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/utils
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/storage)
 
 set(LINK_DEPENDENCIES
         omicsds_static

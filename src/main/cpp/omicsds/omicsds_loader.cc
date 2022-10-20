@@ -1,5 +1,5 @@
 /**
- * src/main/cpp/loader/omicsds_loader.cc
+ * src/main/cpp/omicsds/omicsds_loader.cc
  *
  * The MIT License (MIT)
  * Copyright (c) 2022 Omics Data Automation, Inc.
@@ -628,127 +628,7 @@ std::vector<OmicsCell> MatrixReader::get_next_cells() {
   return {};
 }
 
-int OmicsModule::tiledb_create_array(const std::string& workspace, const std::string& array_name,
-                                     const OmicsSchema& schema) {
-  std::string full_name = workspace + "/" + array_name;
-
-  // Prepare parameters for array schema
-  std::vector<const char*> attributes_vec;
-  std::vector<int32_t> cell_val_num_vec;
-  std::vector<int32_t> types_vec;
-  for (auto& p : schema.attributes) {
-    std::cerr << "REMOVE aname is " << p.first << std::endl;
-    std::cerr << "REMOVE c_str is " << p.first.c_str() << std::endl;
-    std::cerr << "REMOVE address is " << (int64_t)p.first.c_str() << std::endl;
-    attributes_vec.push_back(p.first.c_str());
-    cell_val_num_vec.push_back(p.second.length);
-    types_vec.push_back(p.second.tiledb_type());
-    std::cerr << "REMOVE vec 1 " << container_to_string(attributes_vec) << std::endl;
-  }
-  types_vec.push_back(TILEDB_INT64);  // coords
-
-  std::cerr << "REMOVE vec 2 " << container_to_string(attributes_vec) << std::endl;
-  std::cerr << "REMOVE first attribute address is " << (int64_t)(attributes_vec[0]) << std::endl;
-  std::cerr << "REMOVE first attribute is " << attributes_vec[0] << std::endl;
-  std::cerr << "REMOVE len is " << strlen(attributes_vec[0]) << std::endl;
-
-  const char** attributes = attributes_vec.data();
-  const int* cell_val_num = cell_val_num_vec.data();
-  const int* types = types_vec.data();
-
-  int32_t order = TILEDB_ROW_MAJOR;  // different orders are implemented by reordering coordinates
-
-  const char* dimensions[3];
-  dimensions[2] = "LEVEL";
-  if (schema.position_major()) {
-    dimensions[0] = "POSITION";
-    dimensions[1] = "SAMPLE";
-  } else {
-    dimensions[0] = "SAMPLE";
-    dimensions[1] = "POSITION";
-  }
-
-  int64_t domain[] = {
-      0,
-      std::numeric_limits<int64_t>::max(),  // 1st dimension limits (SAMPLE or POSITION based on
-                                            // order)
-      0,
-      std::numeric_limits<int64_t>::max(),  // 2nd dimension limits
-      0,
-      std::numeric_limits<int64_t>::max()  // LaVEL limits
-  };
-
-  std::vector<int32_t> compression_vec(schema.attributes.size() + 1,
-                                       TILEDB_NO_COMPRESSION);  // plus 1 for coordinates
-  const int* compression = compression_vec.data();
-
-  std::vector<int32_t> offsets_compression_vec(schema.attributes.size(), TILEDB_NO_COMPRESSION);
-  const int* offsets_compression = offsets_compression_vec.data();
-
-  int64_t tile_extents[] = {
-      1,  // 1st dimension extents
-      1,  // 2nd dimension  extents
-      1   // LEVEL extents
-  };
-
-  // Set array schema
-  TileDB_ArraySchema array_schema;
-  tiledb_array_set_schema(&array_schema,             // Array schema struct
-                          full_name.c_str(),         // Array name
-                          attributes,                // Attributes
-                          schema.attributes.size(),  // Number of attributes
-                          1024,                      // Capacity
-                          order,                     // Cell order
-                          cell_val_num,              // Number of cell values per attribute
-                          compression,               // Compression
-                          NULL,                      // Compression level - Use defaults
-                          offsets_compression,       // Offsets compression
-                          NULL,                      // Offsets compression level
-                          0,                         // Sparse array
-                          dimensions,                // Dimensions
-                          3,                         // Number of dimensions
-                          domain,                    // Domain
-                          6 * sizeof(int64_t),       // Domain length in bytes
-                          tile_extents,              // Tile extents
-                          4 * sizeof(int64_t),       // Tile extents length in bytes
-                          order,                     // Tile order
-                          types                      // Types
-  );
-
-  // Create array
-  CHECK_RC(tiledb_array_create(m_tiledb_ctx, &array_schema));
-
-  // Free array schema
-  CHECK_RC(tiledb_array_free_schema(&array_schema));
-
-  return 0;
-}
-
-int OmicsModule::tiledb_open_array(const std::string& workspace, const std::string& array_name,
-                                   int mode) {
-  std::string path = workspace + "/" + array_name;
-
-  // Initialize array
-  CHECK_RC(tiledb_array_init(m_tiledb_ctx,     // Context
-                             &m_tiledb_array,  // Array object
-                             path.c_str(),     // Array name
-                             mode,             // Mode
-                             NULL,             // Entire domain
-                             NULL,             // All attributes
-                             0));              // Number of attributes
-
-  return 0;
-}
-
-int OmicsModule::tiledb_close_array() {
-  // Finalize array
-  if (m_tiledb_array) CHECK_RC(tiledb_array_finalize(m_tiledb_array));
-  m_tiledb_array = 0;
-
-  return 0;
-}
-
-int OmicsLoader::tiledb_write_buffers() {
+void OmicsLoader::store_buffers() {
   std::vector<void*> buffers_vec;
   std::vector<size_t> buffer_sizes_vec;
 
@@ -757,7 +637,7 @@ int OmicsLoader::tiledb_write_buffers() {
     buffers_vec.push_back(m_buffers[i].data());
     buffer_sizes_vec.push_back(m_buffer_lengths[i]);
 
-    if (it->second.length == TILEDB_VAR_NUM) {
+    if (it->second.is_variable()) {
       buffers_vec.push_back(m_var_buffers[i].data());
       buffer_sizes_vec.push_back(m_var_buffer_lengths[i]);
     }
@@ -766,11 +646,7 @@ int OmicsLoader::tiledb_write_buffers() {
   buffers_vec.push_back(m_coords_buffer.data());
   buffer_sizes_vec.push_back(m_coords_buffer_length * sizeof(size_t));
 
-  // Write to array
-  CHECK_RC(tiledb_array_write(m_tiledb_array, const_cast<const void**>(buffers_vec.data()),
-                              buffer_sizes_vec.data()));
-
-  return 0;
+  m_array_storage->store(buffers_vec, buffer_sizes_vec);
 }
 
 static std::string format_number(uint64_t number) {
@@ -791,12 +667,9 @@ static std::string format_number(uint64_t number) {
   return std::to_string(number) + suffix[i];
 }
 
-#define PATH (SLASHIFY(m_workspace) + m_array)
-
 void OmicsLoader::write_buffers() {
-  if (tiledb_write_buffers()) {
-    logger.fatal(OmicsDSStorageException(logger.format("Error writing buffers to array {}", PATH)));
-  }
+  store_buffers();
+
   m_total_processed_cells += m_buffered_cells;
   logger.info("Processed {}/{} cells", format_number(m_total_processed_cells),
               format_number(252000000));
@@ -815,9 +688,8 @@ bool OmicsLoader::check_buffer_sizes(const OmicsCell& cell) {
   for (auto [i, attribute] = std::tuple{0u, m_schema->attributes.begin()};
        i < m_schema->attributes.size(); i++, attribute++) {
     auto& field = cell.fields[i].data;
-    int length = attribute->second.length;
     size_t size = attribute->second.element_size();
-    if (length == TILEDB_VAR_NUM) {  // variable length
+    if (attribute->second.is_variable()) {  // variable length
       if (m_buffer_lengths[i] + sizeof(size_t) > buffer_size) return false;
       if (m_var_buffer_lengths[i] + field.size() > buffer_size) return false;
     } else {
@@ -838,7 +710,7 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
     auto& field = cell.fields[i].data;
     int length = attribute->second.length;
     size_t size = attribute->second.element_size();
-    if (length == TILEDB_VAR_NUM) {  // variable length
+    if (attribute->second.is_variable()) {  // variable length
       memcpy(m_buffers[i].data() + m_buffer_lengths[i], &m_attribute_offsets[i], sizeof(size_t));
       memcpy(m_var_buffers[i].data() + m_var_buffer_lengths[i], field.data(), field.size());
       m_attribute_offsets[i] += field.size();
@@ -857,9 +729,10 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
   uint64_t this_level = (uint64_t)level;
   memcpy(m_coords_buffer.data() + m_coords_buffer_length++, &this_level, sizeof(uint64_t));
 
-  bool close_array = less_than(m_pq.top(), cell);
-  if (++m_buffered_cells > 1024 * 1024 * 1 /*1M cells ~320MB for single cell*/ || close_array) {
-    if (!m_split_warning_emitted && !m_pq.empty()) {
+  bool close_and_reopen_array = less_than(m_pq.top(), cell);
+  if (++m_buffered_cells > 1024 * 1024 * 1 /*1M cells ~320MB for single cell*/ ||
+      close_and_reopen_array) {
+    if (close_and_reopen_array && !m_split_warning_emitted && !m_pq.empty()) {
       m_split_warning_emitted = true;
       logger.warn(
           "Array is being split over multiple fragments. This may cause perfomance penalties "
@@ -867,14 +740,7 @@ void OmicsLoader::buffer_cell(const OmicsCell& cell, int level) {
     }
     write_buffers();
   }
-  if (close_array) {
-    if (tiledb_close_array()) {
-      logger.fatal(OmicsDSStorageException(logger.format("Error closing array {}", PATH)));
-    }
-    if (tiledb_open_array(m_workspace, m_array)) {
-      logger.fatal(OmicsDSStorageException(logger.format("Error opening array {}", PATH)));
-    }
-  }
+  if (close_and_reopen_array) reopen_array();
 }
 
 void ReadCountLoader::create_schema() {
@@ -1141,13 +1007,15 @@ void GeneIdMap::export_as_gi(const std::string& filename) {
 OmicsLoader::OmicsLoader(const std::string& workspace, const std::string& array,
                          const std::string& file_list, const std::string& sample_map,
                          const std::string& mapping_file, bool position_major)
-    : OmicsModule(workspace, array, mapping_file, position_major),
+    : OmicsDSModule(workspace, array, mapping_file, position_major),
       m_file_list(file_list),
       m_sample_map(std::make_shared<SampleMap>(sample_map)),
       m_pq(comparator) {}
 
 void OmicsLoader::initialize() {  // FIXME move file reader creation to somewhere virtual
   create_schema();
+
+  m_array_storage->initialize(true, m_schema, true, true);
 
   // set up buffers
   m_buffers = std::vector<std::vector<uint8_t>>(m_schema->attributes.size());
@@ -1162,10 +1030,6 @@ void OmicsLoader::initialize() {  // FIXME move file reader creation to somewher
   m_buffer_lengths.resize(m_schema->attributes.size(), 0);
   m_var_buffer_lengths.resize(m_schema->attributes.size(), 0);
   m_coords_buffer_length = 0;
-
-  // create workspace/array
-  tiledb_create_array(m_workspace, m_array, *m_schema);
-  tiledb_open_array(m_workspace, m_array);
 
   serialize_schema();
 
@@ -1250,7 +1114,7 @@ void OmicsLoader::import() {
     buffer_cell(cell, level);
   }
   // Persist remaining cells in buffers.
-  tiledb_write_buffers();
+  store_buffers();
 }
 
 void MatrixLoader::import() {

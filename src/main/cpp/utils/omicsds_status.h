@@ -34,4 +34,4 @@
 
 /** Return codes */
 #define OMICSDS_OK 0
-#define OMICDS_ERR -1
+#define OMICSDS_ERR -1

@@ -31,9 +31,9 @@
 #include "omicsds_array_metadata.h"
 #include "omicsds_exception.h"
 #include "omicsds_import_config.h"
+#include "omicsds_module.h"
 #include "omicsds_samplemap.h"
 #include "omicsds_schema.h"
-#include "omicsds_storage.h"
 
 #include <htslib/sam.h>
 #include <algorithm>
@@ -326,7 +326,7 @@ class MatrixReader : public OmicsFileReader {
 // worst case scenario where the end cells returned from file readers are very far from the starts
 // in this case the pq size would increase linearly with reads, rather than staying mostly constant
 // (when end cells are not retained for a very long time in memory)
-class OmicsLoader : public OmicsModule {
+class OmicsLoader : public OmicsDSModule {
  public:
   OmicsLoader(const std::string& workspace, const std::string& array,
               const std::string& file_list,  // file with each line containing a path to a data file
@@ -334,16 +334,16 @@ class OmicsLoader : public OmicsModule {
               const std::string& mapping_file = "",  // see GenomicMap struct
               bool position_major = true  // sample major (false) or position major (true)
   );
-  virtual ~OmicsLoader() { tiledb_close_array(); }
+  virtual ~OmicsLoader() {}
   virtual void import();             // import data from callsets
   virtual void create_schema() = 0;  //
   void
   initialize();  // cannot be part of constructor because it invokes create_schema, which is virtual
  protected:
   std::shared_ptr<SampleMap> m_sample_map;
-  int tiledb_write_buffers();
+  void store_buffers();
 
-  // data for tiledb
+  // data for array database storage
   // stores offset for variable length attributes, and data for constant length ones
   std::vector<std::vector<uint8_t>> m_buffers;
   // entries for constant length attributes will be empty
@@ -353,7 +353,7 @@ class OmicsLoader : public OmicsModule {
   // persists between writes
   std::vector<size_t> m_attribute_offsets;
 
-  // TODO: should be passed in via api or tools
+  // TODO: should be passed in via api or tools or protobuf
   size_t buffer_size = 10240;
   bool check_buffer_sizes(const OmicsCell& cell);
   std::vector<size_t> m_buffer_lengths;

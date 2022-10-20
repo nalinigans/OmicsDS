@@ -28,8 +28,6 @@
 #include <exception>
 #include <string>
 
-#include "tiledb.h"
-
 class OmicsDSException : public std::exception {
  public:
   OmicsDSException(const std::string m = "OmicsDS Exception") : m_msg(m) {}
@@ -43,9 +41,7 @@ class OmicsDSException : public std::exception {
 
 class OmicsDSStorageException : public std::exception {
  public:
-  OmicsDSStorageException(std::string m = "OmicsDS Storage Exception") : m_msg(m) {
-    m += strlen(tiledb_errmsg) ? " : " + std::string(tiledb_errmsg) : "";
-  }
+  OmicsDSStorageException(std::string m = "OmicsDS Storage Exception") : m_msg(m) {}
   ~OmicsDSStorageException() {}
   /** Returns the exception message. */
   const char* what() const noexcept { return m_msg.c_str(); }

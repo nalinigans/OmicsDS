@@ -28,14 +28,24 @@
 #include <string_view>
 
 #include "omicsds_import_config.h"
-#include "omicsds_storage.h"
+#include "omicsds_message_wrapper.h"
+#include "omicsds_tiledb_storage.h"
 
 // Forward declaration of internal classes
 class ImportConfig;
 
-class OmicsDSConfigure : OmicsModule {
+// TODO: create an omicsds_constants.h and move import_config there eventually
+static std::string import_config("import_config");
+
+class OmicsDSConfigure {
  public:
-  OmicsDSConfigure(std::string_view workspace);
+  OmicsDSConfigure(std::string_view workspace)
+      : m_import_config(std::make_shared<OmicsDSMessage<ImportConfig>>(
+            FileUtility::append(workspace, import_config), MessageFormat::JSON)) {
+    std::unique_ptr<OmicsDSArrayStorage> array_storage(
+        std::make_unique<TileDBArrayStorage>(workspace, ""));
+    array_storage->configure_workspace();
+  }
 
   /**
    * Updates the existing import config

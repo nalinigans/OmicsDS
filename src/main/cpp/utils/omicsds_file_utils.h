@@ -28,11 +28,14 @@
 #include <string>
 #include <vector>
 
-#define SLASHIFY(path) (path.back() != '/' ? path + '/' : path)
-#define UNSLASHIFY(path) (path.back() == '/' ? path.substr(0, path.length() - 2) : path)
+class OmicsDSTileDBUtils {
+ public:
+  template <typename... Args>
+  static void check(int rc, const char* fmt, const Args&... args);
+};
 
 // Reading/Writing local/cloud files using TileDBUtils api
-struct FileUtility {
+struct FileUtility : public OmicsDSTileDBUtils {
   // Constructor for reading, write functionality is static. File should exist, else
   // a OmicsDSException is thrown
   FileUtility(const std::string& filename, size_t buffer_size = 1024 * 1024 * 8);
@@ -69,6 +72,46 @@ struct FileUtility {
   // returns tiledb return code
   static int write_file(const std::string& filename, const void* buffer, size_t length,
                         const bool overwrite = false);
+
+  static inline std::string slashify(const std::string& path) {
+    if (path.empty()) {
+      return "/";
+    } else if (path.back() != '/') {
+      return path + '/';
+    } else {
+      return path;
+    }
+  }
+
+  static inline std::string slashify(std::string_view path) { return slashify(std::string(path)); }
+
+  static inline std::string unslashify(const std::string& path) {
+    if (!path.empty() && path.back() == '/') {
+      return path.substr(0, path.size() - 1);
+    } else {
+      return path;
+    }
+  }
+
+  // TODO: replace append using variadic templates, so we can use any number of paths for appending.
+  // Generally simple, but here we do not want to slashify the last path!
+  static std::string append(const std::string& path1, const std::string& path2) {
+    return slashify(path1) + path2;
+  }
+
+  static std::string append(std::string_view path1, std::string_view path2) {
+    return slashify(path1) + std::string(path2);
+  }
+
+  static std::string append(const std::string& path1, const std::string& path2,
+                            const std::string& path3) {
+    return slashify(path1) + slashify(path2) + path3;
+  }
+
+  static std::string append(std::string_view path1, std::string_view path2,
+                            std::string_view path3) {
+    return slashify(path1) + slashify(path2) + std::string(path3);
+  }
 
  private:
   size_t read_from_str_buffer(void* buffer, size_t chars_to_read);

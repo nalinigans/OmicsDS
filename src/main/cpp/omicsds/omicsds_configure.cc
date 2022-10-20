@@ -29,11 +29,6 @@
 
 #include "omicsds_import_config.pb.h"
 
-OmicsDSConfigure::OmicsDSConfigure(std::string_view workspace)
-    : OmicsModule(workspace.data(), ""),
-      m_import_config(std::make_shared<OmicsDSMessage<ImportConfig>>(
-          logger.format("{}/import_config", m_workspace), MessageFormat::JSON)) {}
-
 void OmicsDSConfigure::update_import_config(const OmicsDSImportConfig& config) {
   std::shared_ptr<ImportConfig> import_config = m_import_config->message();
 
