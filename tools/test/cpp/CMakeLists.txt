@@ -51,4 +51,14 @@ if ((NOT DEFINED ENV{RUNNER_OS}) OR (NOT $ENV{RUNNER_OS} STREQUAL "Linux"))
   target_compile_definitions(ctests_cli PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
   target_link_libraries(ctests_cli ${LINK_DEPENDENCIES})
   add_test(ctests_cli ctests_cli -d yes)
+  set_target_properties(ctests_cli PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+  add_test(ctests_cli_build
+    "${CMAKE_COMMAND}"
+    --build "${CMAKE_BINARY_DIR}"
+    --target ctests_cli
+  )
+
+  set_tests_properties(ctests_cli_build PROPERTIES FIXTURES_SETUP test_build_cli_fixture)
+  set_tests_properties(ctests_cli PROPERTIES FIXTURES_REQUIRED test_build_cli_fixture)
 endif()

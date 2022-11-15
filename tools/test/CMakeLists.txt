@@ -28,3 +28,12 @@ add_subdirectory(cpp)
 add_test(NAME cli_tools_test
          COMMAND test_cli.sh ${CMAKE_SOURCE_DIR}/src/test/inputs/OmicsDSTests ${CMAKE_CURRENT_BINARY_DIR}/../main
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_test(ctests_tool_build
+  "${CMAKE_COMMAND}"
+  --build "${CMAKE_BINARY_DIR}"
+  --target omicsds
+)
+
+set_tests_properties(ctests_tool_build PROPERTIES FIXTURES_SETUP test_build_tool_fixture)
+set_tests_properties(cli_tools_test PROPERTIES FIXTURES_REQUIRED test_build_tool_fixture)

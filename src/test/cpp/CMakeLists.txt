@@ -53,6 +53,7 @@ set(CPP_TEST_SOURCES
 
 # ctests for library
 add_executable(ctests_lib ${CPP_TEST_SOURCES})
+set_target_properties(ctests_lib PROPERTIES EXCLUDE_FROM_ALL TRUE)
 target_include_directories(ctests_lib PRIVATE ${CPP_INCLUDE_DIRS} ${PROTOBUF_GENERATED_CXX_HDRS_INCLUDE_DIRS})
 target_compile_definitions(ctests_lib PRIVATE -DOMICSDS_TEST_INPUTS="${CMAKE_CURRENT_SOURCE_DIR}/../inputs/")
 target_link_libraries(ctests_lib ${LINK_DEPENDENCIES})
@@ -62,3 +63,13 @@ add_custom_command(TARGET ctests_lib
   COMMAND ${CMAKE_COMMAND} -E tar xzf 18k-1000-ws.tgz
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../inputs
   DEPENDS 18k-1000-ws.tgz)
+
+
+add_test(ctests_lib_build
+  "${CMAKE_COMMAND}"
+  --build "${CMAKE_BINARY_DIR}"
+  --target ctests_lib
+)
+
+set_tests_properties(ctests_lib_build PROPERTIES FIXTURES_SETUP test_build_lib_fixture)
+set_tests_properties(ctests_lib PROPERTIES FIXTURES_REQUIRED test_build_lib_fixture)

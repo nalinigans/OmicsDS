@@ -121,7 +121,7 @@ jobs:
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME \
                                 -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION -DCMAKE_PREFIX_PATH=~/catch2-install
         make -j4
-        make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
+        cmake --build . --target test --parallel 4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
         make install
 
     - name: Build - MacOS
@@ -139,7 +139,7 @@ jobs:
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DDISABLE_OPENMP=1 -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME \
                                 -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION
         make -j4
-        make test -j4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
+        cmake --build . --target test --parallel 4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
         make install
       env:
         OPENSSL_ROOT_DIR: /usr/local/opt/openssl@1.1

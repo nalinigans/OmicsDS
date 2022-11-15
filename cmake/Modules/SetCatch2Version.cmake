@@ -27,7 +27,7 @@
 # catch.h to support both major versions, 2 and 3 for now.
 #
 
-find_package(Catch2 REQUIRED)
+find_package(Catch2)
 set(CATCH2_HEADER "catch2/catch.hpp")
 unset(HEADER_PATH CACHE)
 find_path(HEADER_PATH ${CATCH2_HEADER})
@@ -45,5 +45,12 @@ else()
   endif()
 endif()
 
-message(STATUS "Found Catch2: ${CATCH2_INCLUDE_FILE}/${CATCH2_HEADER} Version=${CATCH2_MAJOR_VERSION}")
+if(TARGET Catch2::Catch2)
+  set(CATCH2_FOUND TRUE)
+  message(STATUS "Found Catch2: ${CATCH2_INCLUDE_FILE}/${CATCH2_HEADER} Version=${CATCH2_MAJOR_VERSION}")
+else()
+  message(STATUS "Failed to find Catch2 installation, the test suite will be disabled.")
+endif()
+
+
 add_definitions(-DCATCH2_MAJOR_VERSION=${CATCH2_MAJOR_VERSION})

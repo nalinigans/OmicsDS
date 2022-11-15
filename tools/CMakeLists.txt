@@ -25,4 +25,6 @@
 #
 
 add_subdirectory(main)
-add_subdirectory(test)
+if(DEFINED CATCH2_FOUND)
+  add_subdirectory(test)
+endif()
