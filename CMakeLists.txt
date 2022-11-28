@@ -192,6 +192,9 @@ add_subdirectory(src)
 # Build tools
 add_subdirectory(tools)
 
+# Bindings
+add_subdirectory(bindings)
+
 # Unininstall OmicsDS
 add_custom_target(uninstall-omicsds
   COMMAND echo "-- Uninstalling OmicsDS from ${CMAKE_INSTALL_PREFIX}..."
