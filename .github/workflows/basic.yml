@@ -158,6 +158,21 @@ jobs:
     - name: Upload Report to CodeCov
       uses: codecov/codecov-action@v1
 
+  docs-build:
+    name: Documentation build
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docs
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get -y install cmake lcov
+        sudo apt-get -y install zlib1g-dev libssl-dev uuid-dev libcurl4-openssl-dev zstd doxygen
+        pip3 install sphinx breathe
+        cmake $GITHUB_WORKSPACE -DBUILD_DOCS=TRUE
+        make docs
+
   r-build:
     name: R Build
     needs: build

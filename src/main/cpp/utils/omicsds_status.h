@@ -32,6 +32,7 @@
 
 #pragma once
 
-/** Return codes */
+/** Success return code */
 #define OMICSDS_OK 0
+/** Error return code */
 #define OMICSDS_ERR -1

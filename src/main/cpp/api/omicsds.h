@@ -38,17 +38,50 @@
 #define OMICSDS_EXPORT
 #endif
 
+/**
+ * Handle representing a workspace and array pair that the library has allocated resources for
+ * operating on.
+ */
 typedef size_t OmicsDSHandle;
 
+/**
+ * A function definition for processing entries in a feature matrix.
+ */
 typedef std::function<void(const std::string& feature_id, uint64_t sample_id, float score)>
     feature_process_fn_t;
 
 class OMICSDS_EXPORT OmicsDS {
  public:
   // Utilities
+  /**
+   * Returns a string representation of the current OmicsDS library version.
+   *
+   * @return the current library version
+   */
   static std::string version();
+  /**
+   * Connects to a given workspace and array, returning a handle for subsequent operations.
+   *
+   * @param workspace the path to the workspace to connect to
+   * @param array     the array within the specificed workspace to connect to
+   * @return          a handle for use in subsequent requests
+   */
   static OmicsDSHandle connect(const std::string& workspace, const std::string& array);
+  /**
+   * Disconnects the given handle, freeing any resources.
+   *
+   * @param handle the handle that should be disconnected
+   */
   static void disconnect(OmicsDSHandle handle);
+  /**
+   * Query a given handle, processing the results.
+   *
+   * @param handle       a handle previously returned by OmicsDS::connect
+   * @param features     the set of features to query on
+   * @param sample_range the range of samples to query on inclusive of both endpoints
+   * @param proc         a function that will process each feature sample pair as it is queried. By
+   * default, results will be printed to stdout
+   */
   static void query_features(OmicsDSHandle handle, std::vector<std::string>& features,
                              std::array<int64_t, 2>& sample_range,
                              feature_process_fn_t proc = NULL);

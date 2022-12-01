@@ -1,5 +1,5 @@
-/**
- * src/main/cpp/loader/omicsds_loader.h
+/*
+ * src/main/cpp/utils/omicsds_exception.h
  *
  * The MIT License (MIT)
  * Copyright (c) 2022 Omics Data Automation, Inc.
@@ -28,6 +28,9 @@
 #include <exception>
 #include <string>
 
+/**
+ * Base exception representing a failure in the library layer of the OmicsDS library
+ */
 class OmicsDSException : public std::exception {
  public:
   OmicsDSException(const std::string m = "OmicsDS Exception") : m_msg(m) {}
@@ -39,6 +42,9 @@ class OmicsDSException : public std::exception {
   std::string m_msg;
 };
 
+/**
+ * Base exception representing a failure in the storage layer of the OmicsDS library
+ */
 class OmicsDSStorageException : public std::exception {
  public:
   OmicsDSStorageException(std::string m = "OmicsDS Storage Exception") : m_msg(m) {}

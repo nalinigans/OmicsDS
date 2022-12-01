@@ -24,6 +24,19 @@ make
 make install
 ```
 
+## Documentation
+You will need the following prerequisites for building the library documentation:
+* doxygen
+* sphinx
+* breathe
+
+Then run the following commands to generate the documentation, it will be generated under the `docs/sphinx` folder in your build directory.
+```bash
+mkdir build && cd build
+cmake .. -DBUILD_DOCS=TRUE
+make docs
+```
+
 ## Running Tests
 In addition to the library prerequisites, you will also need Catch2 installed. We support both Catch2 v2 and v3 for testing. Note that testing is automatically enabled or disabled based on the presence of the Catch2 library during initial configuration with `cmake`, so if you have subsequently installed Catch2 you will need to rerun the configuration process. Once you have Catch2, you can build the test binaries and run the tests by running one of the following commands:
 ```bash
