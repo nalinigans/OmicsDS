@@ -43,7 +43,7 @@ env:
 jobs:
   lint-cpp:
     name: Lint C++
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Check C++ Formatting
@@ -58,7 +58,7 @@ jobs:
     needs: lint-cpp
     strategy:
       matrix:
-        os: [macOS-latest, ubuntu-latest]
+        os: [macOS-latest, ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     env:
       OMICSDS_INSTALL_DIR: install-${{matrix.os}}
@@ -161,7 +161,7 @@ jobs:
   docs-build:
     name: Documentation build
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Build docs
@@ -173,13 +173,36 @@ jobs:
         cmake $GITHUB_WORKSPACE -DBUILD_DOCS=TRUE
         make docs
 
+  docker-build:
+    name: Docker build
+    needs: lint-cpp
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      with:
+        registry: ${{ secrets.DOCKER_REGISTRY }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build & test docker
+      env:
+        DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+        DEVELOPER_TOKEN: ${{ secrets.DEVELOPER_TOKEN }}
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      run: |
+        git lfs pull
+        .github/scripts/build_dockers.sh
+
   r-build:
     name: R Build
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
-      OMICSDS_INSTALL_DIR: install-ubuntu-latest
-      OMICSDS_HOME: ${{github.workspace}}/install-ubuntu-latest
+      OMICSDS_INSTALL_DIR: install-ubuntu-20.04
+      OMICSDS_HOME: ${{github.workspace}}/install-ubuntu-20.04
       RENV_PATHS_ROOT: ~/.local/share/renv
 
     steps:

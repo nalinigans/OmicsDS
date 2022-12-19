@@ -66,6 +66,14 @@ The CLI can be invoked directly to access its help text. Running the CLI with no
 # Contributing
 This section is intended for developers looking to contribute to the OmicsDS library.
 
+## Development Docker
+The `Dockerfile.developer` file can be used to quickly setup a build environment with the necessary build tools. If you have `docker` installed run:
+```bash
+docker build -f Dockerfile.developer -t omicsds:develop .
+docker run -v <path to your OmicsDS repo>:/home/omicsds/OmicsDS -it omicsds:develop
+```
+This will mount your OmicsDS repository into the Docker and you can begin development.
+
 ## Branching
 All your development should be done on a feature branch that has been branched off of `develop`. Once your feature is complete, open a PR against `develop` to have your changes incorporated.
 

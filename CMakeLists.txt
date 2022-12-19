@@ -171,7 +171,7 @@ include(SetCatch2Version)
 
 set(OMICSDS_DEPENDENCIES
   ${HTSLIB_LIBRARY}
-  ${TILEDB_LIBRARY}
+  tiledb_static
   ${OPENSSL_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${LIBUUID_LIBRARY}
