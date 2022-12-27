@@ -45,7 +45,7 @@ jobs:
     name: Lint C++
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Check C++ Formatting
         working-directory: ${{github.workspace}}
         run: |
@@ -58,14 +58,14 @@ jobs:
     needs: lint-cpp
     strategy:
       matrix:
-        os: [macOS-latest, ubuntu-20.04]
+        os: [macOS-12, ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     env:
       OMICSDS_INSTALL_DIR: install-${{matrix.os}}
       OMICSDS_HOME: ${{github.workspace}}/install-${{matrix.os}}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Create LFS file list
       run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
@@ -73,32 +73,32 @@ jobs:
     # All caching actions should happen before  restoration. This action automatically
     # caches the artifacts as post-build operations
     - name: Cache LFS files
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: .git/lfs
         key: lfs-${{ hashFiles('.lfs-assets-id') }}-v1-${{runner.os}}
 
     - name: Cache AWS SDK
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/awssdk-install
         key: awssdk-v1-${{matrix.os}}
 
     - name: Cache GCS SDK
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/gcssdk-install
         key: gcssdk-v1-${{matrix.os}}
 
     - name: Cache Protobuf
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/protobuf-install/{{env.PROTOBUF_VERSION}}
         key: protobuf-install-v{{env.PROTOBUF_VERSION}}-${{matrix.os}}
   
     - name: Cache Catch2 artifacts
       if: startsWith(matrix.os,'ubuntu')
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/catch2-install
         key: catch2-v${{env.CATCH2_VER}}-${{matrix.os}}
@@ -149,21 +149,21 @@ jobs:
       run: tar -cvf $OMICSDS_INSTALL_DIR.tar $OMICSDS_INSTALL_DIR 
 
     - name: Upload Install Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: OmicsDS-Install-${{runner.os}}
         path: ${{env.OMICSDS_HOME}}.tar
         retention-days: 5
 
     - name: Upload Report to CodeCov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
 
   docs-build:
     name: Documentation build
     needs: build
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build docs
       run: |
         sudo apt-get update -qq
@@ -177,11 +177,12 @@ jobs:
     name: Docker build
     needs: lint-cpp
     runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Log in to the Container registry
-      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      uses: docker/login-action@v2
       with:
         registry: ${{ secrets.DOCKER_REGISTRY }}
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -191,7 +192,6 @@ jobs:
       env:
         DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
         DEVELOPER_TOKEN: ${{ secrets.DEVELOPER_TOKEN }}
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
       run: |
         git lfs pull
         .github/scripts/build_dockers.sh
@@ -206,13 +206,13 @@ jobs:
       RENV_PATHS_ROOT: ~/.local/share/renv
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up R
       uses: r-lib/actions/setup-r@v2
 
     - name: Cache packages
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ${{ env.RENV_PATHS_ROOT }}
         key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
@@ -226,7 +226,7 @@ jobs:
         renv::restore()
 
     - name: Download Install Artifact from main build
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: OmicsDS-Install-${{runner.os}}
 
