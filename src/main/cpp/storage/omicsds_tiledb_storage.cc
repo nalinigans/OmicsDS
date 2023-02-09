@@ -219,6 +219,8 @@ int TileDBArrayStorage::retrieve_by_cell(std::vector<void*>& buffers,
   check(tiledb_array_get_schema(m_tiledb_array, &tiledb_array_schema),
         "Could not get TileDB schema for array={}", m_array_path);
 
+  check(tiledb_array_finalize(m_tiledb_array), "Failed to finalize array path={}", m_array_path);
+
   TileDB_ArrayIterator* tiledb_array_it;
   check(tiledb_array_iterator_init(m_tiledb_ctx,          // Context
                                    &tiledb_array_it,      // Array iterator
@@ -279,6 +281,11 @@ int TileDBArrayStorage::retrieve_by_cell(std::vector<void*>& buffers,
     check(tiledb_array_iterator_next(tiledb_array_it),
           "Could not advance TileDB iterator for array={}", m_array_path);
   }
+
+  check(tiledb_array_iterator_finalize(tiledb_array_it),
+        "Failed to finalize TileDB array iterator for array={}", m_array_path);
+
+  open_array(false);
 
   return OMICSDS_OK;
 }

@@ -90,6 +90,16 @@ void OmicsDS::query_features(OmicsDSHandle handle, std::vector<std::string>& fea
   FeatureProcessor feature_processor(features, proc);
   process_function bound = std::bind(&FeatureProcessor::process, std::ref(feature_processor),
                                      std::placeholders::_1, std::placeholders::_2);
-  std::array<int64_t, 2> encoded_feature_range = {0, std::numeric_limits<int64_t>::max()};
-  instance->query(sample_range, encoded_feature_range, bound);
+  if (features.size() == 0) {
+    std::array<int64_t, 2> range = {0, std::numeric_limits<int64_t>::max()};
+    instance->query(sample_range, range, bound);
+  } else {
+    std::array<int64_t, 2> range = {0, 0};
+    for (auto feature : features) {
+      auto gtf_id = encode_gtf_id(feature);
+      range[0] = gtf_id.first;
+      range[1] = gtf_id.first;
+      instance->query(sample_range, range, bound);
+    }
+  }
 }
