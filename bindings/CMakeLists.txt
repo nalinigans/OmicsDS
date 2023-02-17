@@ -24,4 +24,8 @@
 # THE SOFTWARE.
 #
 
+add_custom_target(omicsds_library_install
+    COMMAND "${CMAKE_COMMAND}" --build "${PROJECT_BINARY_DIR}" --target install)
+
 add_subdirectory(r)
+add_subdirectory(python)

@@ -1,9 +1,9 @@
 #
-# CMakeLists.txt
+# api.pxd
 #
 # The MIT License
 #
-# Copyright (c) 2022 Omics Data Automation, Inc.
+# Copyright (c) 2023 Omics Data Automation, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+# distutils: language = c++
+# cython: language_level=3
 
-add_custom_target(omicsds_r
-  COMMAND R CMD build ${CMAKE_CURRENT_SOURCE_DIR} --no-build-vignettes
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_dependencies(omicsds_r omicsds_static)
+from libc.stdint cimport int64_t, uint8_t, uint64_t
+from libcpp.functional cimport function
+from libcpp.pair cimport pair
+from libcpp.string cimport string
+from libcpp.vector cimport vector
 
-set(R_LIBS "~/R-libs" CACHE STRING "Directory to install R libraries in")
 
-add_custom_target(omicsds_r_install
-  COMMAND R -e \"install.packages('remotes', lib = '${R_LIBS}')\"
-  COMMAND R -e \"library(remotes, lib.loc= '${R_LIBS}')\; remotes::install_local('${CMAKE_CURRENT_SOURCE_DIR}', lib = '${R_LIBS}', dependencies = TRUE, configure.args = '--with-omicsds=${CMAKE_INSTALL_PREFIX}')\"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_dependencies(omicsds_r_install omicsds_r omicsds_library_install)
+cdef extern from "omicsds_processor.h":
+    cdef cppclass OmicsDSProcessor:
+        OmicsDSProcessor(vector[string]* features, vector[uint64_t]* samples, vector[float]* scores)
+
+
+cdef extern from "omicsds.h":
+    ctypedef size_t OmicsDSHandle
+
+    cdef cppclass OmicsDS:
+        @staticmethod
+        string version()
+
+        @staticmethod
+        OmicsDSHandle connect(const string& workspace, const string& array) except +
+
+        @staticmethod
+        void disconnect(OmicsDSHandle handle)
+
+        @staticmethod
+        void query_features(OmicsDSHandle handle, vector[string]& features,
+                             pair[int64_t, int64_t]& sample_range,
+                             OmicsDSProcessor proc) except +

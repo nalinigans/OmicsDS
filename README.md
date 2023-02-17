@@ -56,6 +56,14 @@ cmake .. -DR_LIBS=<location where R libraries should be installed defaults to ~/
 make omicsds_r_install
 ```
 
+### Python
+We provide a Python package for interfacing with the C++ library. You will need all of the library prerequisites, in addition to a Python installation. It is recommended to use an isolated environment for installing, for example with `venv`.
+```bash
+python -m venv .env
+source .env/bin/activate
+make omicsds_python
+```
+
 # Usage
 ## Library
 The CLI is the currently the primary reference example for consumers of the library. The source files located at `tools/main` cover all of the major library features, with each file named to indicate which feature it demonstrates. The library documentation is also a helpful reference, instructions for generating it can be found in the [Documentation](#documentation) section.

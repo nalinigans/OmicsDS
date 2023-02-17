@@ -12,8 +12,8 @@ RUN apt update && apt install -y cmake lcov zlib1g-dev libssl-dev uuid-dev libcu
 # Documentation build requirements
 RUN apt install -y --no-install-recommends python3 python3-venv python3-pip doxygen
 
-# R requirements
-RUN apt install -y --no-install-recommends r-base
+# Bindings requirements
+RUN apt install -y --no-install-recommends r-base python3-dev
 
 # Other items (clang-format, catch2)
 RUN apt install -y --no-install-recommends clang-format

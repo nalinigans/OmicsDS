@@ -103,3 +103,9 @@ void OmicsDS::query_features(OmicsDSHandle handle, std::vector<std::string>& fea
     }
   }
 }
+
+void OmicsDS::query_features(OmicsDSHandle handle, std::vector<std::string>& features,
+                             std::pair<int64_t, int64_t>& sample_range, feature_process_fn_t proc) {
+  std::array<int64_t, 2> sample_range_array = {sample_range.first, sample_range.second};
+  OmicsDS::query_features(handle, features, sample_range_array, proc);
+}

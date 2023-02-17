@@ -153,7 +153,7 @@ jobs:
       with:
         name: OmicsDS-Install-${{runner.os}}
         path: ${{env.OMICSDS_HOME}}.tar
-        retention-days: 5
+        retention-days: 1
 
     - name: Upload Report to CodeCov
       uses: codecov/codecov-action@v3
@@ -248,3 +248,33 @@ jobs:
     - name: R CMD Check
       shell: Rscript {0}
       run: rcmdcheck::rcmdcheck("bindings/r", args=c("--no-manual", "--ignore-vignettes"), build_args="--no-build-vignettes", error_on = "error")
+
+  python-build:
+    name: python-build
+    needs: build
+    runs-on: ubuntu-20.04
+    env:
+      OMICSDS_INSTALL_DIR: install-ubuntu-20.04
+      OMICSDS_HOME: ${{github.workspace}}/install-ubuntu-20.04
+      LD_LIBRARY_PATH: ${{github.workspace}}/install-ubuntu-20.04/lib
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Download Install Artifact from main build
+      uses: actions/download-artifact@v3
+      with:
+        name: OmicsDS-Install-${{runner.os}}
+
+    - name: Extract from downloaded install artifact
+      working-directory: ${{github.workspace}}
+      run: tar -xvf $OMICSDS_HOME.tar && ls -l $OMICSDS_HOME
+
+    - name: Lint & Test Python bindings
+      working-directory: ${{github.workspace}}/bindings/python
+      run: |
+        python3 -m pip install -r requirements/dev.txt
+        ./scripts/lint_sources.sh
+        python3 -m build -s -C="--build-option=--cythonize"
+        pip3 install dist/*.tar.gz
+        cd .. && python3 -m pytest python

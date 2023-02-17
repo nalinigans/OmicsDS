@@ -60,3 +60,4 @@ cmake --build ${BUILD_DIR} --target docs --parallel $(nproc)
 
 # Bindings build
 make omicsds_r_install
+make omicsds_python

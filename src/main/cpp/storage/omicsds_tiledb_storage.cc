@@ -158,15 +158,17 @@ void TileDBArrayStorage::initialize(bool write_mode, std::shared_ptr<OmicsSchema
 }
 
 void TileDBArrayStorage::open_array(bool write_mode) {
+  TileDB_Array* tiledb_array = nullptr;
   // Initialize array
   check(tiledb_array_init(m_tiledb_ctx,                                         // Context
-                          &m_tiledb_array,                                      // Array object
+                          &tiledb_array,                                        // Array object
                           m_array_path.c_str(),                                 // Array name
                           write_mode ? TILEDB_ARRAY_WRITE : TILEDB_ARRAY_READ,  // Mode
                           NULL,                                                 // Entire domain
                           NULL,                                                 // All attributes
                           0),  // Number of attributes
         "Could not initialize TileDB array={}", m_array_path);
+  m_tiledb_array = tiledb_array;
 }
 
 // TODO: This should only be invoked in write mode. Add check!!

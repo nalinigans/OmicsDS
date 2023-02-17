@@ -1,9 +1,9 @@
 #
-# CMakeLists.txt
+# conftest.py
 #
 # The MIT License
 #
-# Copyright (c) 2022 Omics Data Automation, Inc.
+# Copyright (c) 2023 Omics Data Automation, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+import pytest
+import os
+import pathlib
+import omicsds.api
 
-add_custom_target(omicsds_r
-  COMMAND R CMD build ${CMAKE_CURRENT_SOURCE_DIR} --no-build-vignettes
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_dependencies(omicsds_r omicsds_static)
 
-set(R_LIBS "~/R-libs" CACHE STRING "Directory to install R libraries in")
+@pytest.fixture(scope="session")
+def test_inputs_dir():
+    path_root = pathlib.Path(__file__).parent.parent.parent.parent.resolve().as_posix()
+    root = pathlib.Path(os.environ.get("OMICSDS_REPOSITORY", path_root))
+    return root.joinpath("src/test/inputs").as_posix()
 
-add_custom_target(omicsds_r_install
-  COMMAND R -e \"install.packages('remotes', lib = '${R_LIBS}')\"
-  COMMAND R -e \"library(remotes, lib.loc= '${R_LIBS}')\; remotes::install_local('${CMAKE_CURRENT_SOURCE_DIR}', lib = '${R_LIBS}', dependencies = TRUE, configure.args = '--with-omicsds=${CMAKE_INSTALL_PREFIX}')\"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_dependencies(omicsds_r_install omicsds_r omicsds_library_install)
+
+@pytest.fixture(scope="session")
+def workspace(test_inputs_dir):
+    return os.path.join(test_inputs_dir, "feature-level-ws")
+
+
+@pytest.fixture(scope="session")
+def array():
+    return "array"
+
+
+@pytest.fixture(scope="function")
+def omicsds_handle(workspace, array):
+    handle = omicsds.api.connect(workspace, array)
+    yield handle
+    omicsds.api.disconnect(handle)

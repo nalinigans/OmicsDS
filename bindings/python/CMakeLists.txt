@@ -3,7 +3,7 @@
 #
 # The MIT License
 #
-# Copyright (c) 2022 Omics Data Automation, Inc.
+# Copyright (c) 2023 Omics Data Automation, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,10 @@
 # THE SOFTWARE.
 #
 
-add_custom_target(omicsds_r
-  COMMAND R CMD build ${CMAKE_CURRENT_SOURCE_DIR} --no-build-vignettes
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+add_custom_target(omicsds_python
+  COMMAND python -m pip install build
+  COMMAND OMICSDS_HOME=${CMAKE_INSTALL_PREFIX} python -m build -s -C="--build-option=--cythonize"
+  COMMAND OMICSDS_HOME=${CMAKE_INSTALL_PREFIX} python -m pip install  ${CMAKE_CURRENT_SOURCE_DIR}/dist/*.tar.gz
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
-add_dependencies(omicsds_r omicsds_static)
-
-set(R_LIBS "~/R-libs" CACHE STRING "Directory to install R libraries in")
-
-add_custom_target(omicsds_r_install
-  COMMAND R -e \"install.packages('remotes', lib = '${R_LIBS}')\"
-  COMMAND R -e \"library(remotes, lib.loc= '${R_LIBS}')\; remotes::install_local('${CMAKE_CURRENT_SOURCE_DIR}', lib = '${R_LIBS}', dependencies = TRUE, configure.args = '--with-omicsds=${CMAKE_INSTALL_PREFIX}')\"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_dependencies(omicsds_r_install omicsds_r omicsds_library_install)
+add_dependencies(omicsds_python omicsds_static omicsds_library_install)

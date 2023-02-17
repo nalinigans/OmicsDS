@@ -1,9 +1,9 @@
 #
-# CMakeLists.txt
+# test_bindings.py
 #
 # The MIT License
 #
-# Copyright (c) 2022 Omics Data Automation, Inc.
+# Copyright (c) 2023 Omics Data Automation, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,35 @@
 # THE SOFTWARE.
 #
 
-add_custom_target(omicsds_r
-  COMMAND R CMD build ${CMAKE_CURRENT_SOURCE_DIR} --no-build-vignettes
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_dependencies(omicsds_r omicsds_static)
+import pytest
+import pandas as pd
+import numpy as np
+import omicsds.api
 
-set(R_LIBS "~/R-libs" CACHE STRING "Directory to install R libraries in")
 
-add_custom_target(omicsds_r_install
-  COMMAND R -e \"install.packages('remotes', lib = '${R_LIBS}')\"
-  COMMAND R -e \"library(remotes, lib.loc= '${R_LIBS}')\; remotes::install_local('${CMAKE_CURRENT_SOURCE_DIR}', lib = '${R_LIBS}', dependencies = TRUE, configure.args = '--with-omicsds=${CMAKE_INSTALL_PREFIX}')\"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_dependencies(omicsds_r_install omicsds_r omicsds_library_install)
+def test_connect(omicsds_handle):
+    assert omicsds_handle is not None
+
+
+def test_restricted_query(omicsds_handle):
+    features = ["ENSG00000138190", "ENSG00000243485"]
+    df = omicsds.api.query_features(omicsds_handle, features, (0, 2))
+    expected_df = pd.DataFrame(
+        [[1488.0, 177.0, 405.0], [828.0, 153.0, 2301.0]], index=features, dtype=np.float32
+    )
+    assert expected_df.equals(df)
+    assert (expected_df.index == df.index).all()
+    assert (expected_df.columns == df.columns).all()
+
+
+def test_full_query(omicsds_handle):
+    features = ["ENSG00000138190", "ENSG00000243485"]
+    df = omicsds.api.query_features(omicsds_handle)
+    assert (df.index == features).all()
+    assert (df.columns == range(304)).all()
+    assert df[10]["ENSG00000138190"] == 0.0
+
+
+def test_no_workspace():
+    with pytest.raises(Exception):
+        handle = omicsds.api.connect("/no-workspace", "array")

@@ -29,6 +29,7 @@
 #include <array>
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Override project visibility set to hidden for api
@@ -84,5 +85,18 @@ class OMICSDS_EXPORT OmicsDS {
    */
   static void query_features(OmicsDSHandle handle, std::vector<std::string>& features,
                              std::array<int64_t, 2>& sample_range,
+                             feature_process_fn_t proc = NULL);
+
+  /**
+   * Query a given handle, processing the results.
+   *
+   * @param handle       a handle previously returned by OmicsDS::connect
+   * @param features     the set of features to query on
+   * @param sample_range the range of samples to query on inclusive of both endpoints
+   * @param proc         a function that will process each feature sample pair as it is queried. By
+   * default, results will be printed to stdout
+   */
+  static void query_features(OmicsDSHandle handle, std::vector<std::string>& features,
+                             std::pair<int64_t, int64_t>& sample_range,
                              feature_process_fn_t proc = NULL);
 };

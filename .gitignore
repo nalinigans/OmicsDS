@@ -54,3 +54,14 @@ omicsds_import.gperf.*
 # VS Code
 .devcontainer
 .vscode
+
+# Python
+env/
+venv/
+.env/
+.eggs/
+dist/
+*.egg-info/
+
+# Cython generated files
+bindings/python/omicsds/*.cpp

@@ -34,6 +34,7 @@
 #include "test_base.h"
 
 #include "omicsds.h"
+#include "omicsds_exception.h"
 
 #include <stdlib.h>
 #include <iostream>
@@ -135,5 +136,9 @@ TEST_CASE("test basic query", "[basic-feature-query]") {
     OmicsDS::query_features(handle, one_feature, sub_sample_range, bound);
     CHECK(check.m_cells.size() == 20);
     OmicsDS::disconnect(handle);
+  }
+
+  SECTION("missing workspace") {
+    REQUIRE_THROWS_AS(OmicsDS::connect("/no-workspace", "array"), OmicsDSStorageException);
   }
 }
