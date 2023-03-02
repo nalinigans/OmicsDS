@@ -1,0 +1,23 @@
+name: Documentation build
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+
+jobs:
+  docs-build:
+    name: Documentation build
+    runs-on: ${{ inputs.runner }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build docs
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get -y install cmake lcov
+        sudo apt-get -y install zlib1g-dev libssl-dev uuid-dev libcurl4-openssl-dev zstd doxygen
+        pip3 install sphinx breathe
+        cmake $GITHUB_WORKSPACE -DBUILD_DOCS=TRUE
+        make docs
