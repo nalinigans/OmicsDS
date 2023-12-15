@@ -29,11 +29,13 @@ jobs:
         key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
         restore-keys: |
           ${{ runner.os }}-renv-
+        
     - name: Restore packages
       shell: Rscript {0}
       run: |
         if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-        renv::restore()
+        #renv::restore() || echo "*** Could not renv::restore() packages"
+
     - name: Download Install Artifact from main build
       uses: actions/download-artifact@v3
       with:

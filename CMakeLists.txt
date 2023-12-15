@@ -25,8 +25,8 @@
 # THE SOFTWARE.
 #
 
-project(OmicsDS)
 cmake_minimum_required(VERSION 3.6)
+project(OmicsDS)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -40,7 +40,7 @@ set(SPDLOG_INCLUDE_DIR  "${CMAKE_SOURCE_DIR}/dependencies/spdlog/include" CACHE 
 
 # Protobuf library
 set(OMICSDS_PROTOBUF_VERSION "3.21.7" CACHE STRING "Version of Google Protocol Buffer library")
-set(PROTOBUF_ROOT_DIR "$ENV{HOME}/protobuf-install" CACHE PATH "Path to installed protobuf")
+set(PROTOBUF_ROOT_DIR "$ENV{HOME}/protobuf-install/${OMICSDS_PROTOBUF_VERSION}" CACHE PATH "Path to installed protobuf")
 set(PROTOBUF_URL "https://github.com/protocolbuffers/protobuf/archive/v${OMICSDS_PROTOBUF_VERSION}.zip" CACHE STRING "URL to protobuf github release")
 
 # GIT_COMMIT_HASH derived from git tag to be used as part of OMICSDS_VERSION

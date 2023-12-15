@@ -63,7 +63,7 @@ TEST_CASE("test OmicsFieldData class", "[omicsfielddata]") {
       REQUIRE(ret_struct->z == 15903);
       byte_offset += sizeof(test_struct);
 
-      char str_buf[8];
+      char str_buf[8] = {};
       for (auto i = 0ul; i < 3; i++) {
         memcpy(str_buf, ofd.get_ptr<uint8_t>() + byte_offset, string_arr[i].length());
         REQUIRE(str_buf == string_arr[i]);
