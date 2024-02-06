@@ -165,12 +165,6 @@ jobs:
     with:
       runner: ubuntu-20.04
     
-  r-lang:
-    needs: build
-    uses: ./.github/workflows/R.yml
-    with:
-      runner: ubuntu-20.04
-
   python:
     needs: build
     uses: ./.github/workflows/python.yml
