@@ -851,16 +851,12 @@ void GeneIdMap::create_from_gtf(const std::string& gene_map, bool use_transcript
                                 bool drop_version) {
   std::string str;
 
-  int ind = -1;
-
   FileUtility file(gene_map);
 
   while (file.generalized_getline(str)) {
     if (str[0] == '#') {
       continue;
     }
-
-    ++ind;
 
     std::stringstream ss(str);
     std::string field;

@@ -1,0 +1,76 @@
+#
+# publish.yml
+#
+# The MIT License
+#
+# Copyright (c) 2023-2024 dātma, inc™
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+name: Publish Wheels
+
+#on:
+#  push:
+#    tags:
+#      - v*
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    outputs:
+        version_output: ${{env.VERSION_NUMBER}}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-12]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version number
+        run: |
+            VERSION_NUMBER=${GITHUB_REF_NAME:1}
+            if [ $(echo "${VERSION_NUMBER##*.}") == "test" ]; then
+                VERSION_NUMBER=${VERSION_NUMBER%.*}
+            fi
+            echo VERSION_NUMBER=${VERSION_NUMBER} >> $GITHUB_ENV
+
+      - name: Install prereqs
+        run: $GITHUB_WORKSPACE/.github/scripts/install_prereqs.sh release
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.2
+        env:
+          CIBW_ARCHS: "x86_64"
+          CIBW_BEFORE_BUILD: "echo *** cwd=$(pwd) && pip install -r requirements/dev.txt"
+          CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{env.VERSION_NUMBER}} --build-option=--with-omicsds=/usr/local"
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair -w {dest_dir} {wheel}"
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+        with:
+          package-dir: bindings/python
+
+      - name: Upload Wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: bindings/python/wheelhouse/*.whl

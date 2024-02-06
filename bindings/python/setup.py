@@ -4,7 +4,7 @@
 # The MIT License
 #
 # Copyright (c) 2023 Omics Data Automation, Inc.
-# Copyright (c) 2023 dātma, inc™
+# Copyright (c) 2023-2024 dātma, inc™
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,37 +24,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+# Description: setup script to build the OmicsDS python package
+#
 import sys
 import os
-
 import numpy as np
 
 from setuptools import setup, Extension, find_packages
 
 # Try reading install location from environment
-OMICSDS_INSTALL_PATH = os.getenv("OMICSDS_HOME", default="omicsds")
+OMICSDS_INSTALL_PATH = os.getenv("OMICSDS_HOME", default="/usr/local")
+WITH_VERSION = "0.0.1"
+USE_CYTHON = False
+EXT = "cpp"
 
 # Scan environment and arg list to determine if we should cythonize or not
 print(sys.argv)
-try:
-    cythonize_idx = sys.argv.index("--cythonize")
-    sys.argv.pop(cythonize_idx)
-except ValueError:
-    cythonize_idx = -1
-if os.getenv("OMICSDS_CYTHONIZE", None) or cythonize_idx != -1:
-    USE_CYTHON = True
-    EXT = "pyx"
-else:
-    USE_CYTHON = False
-    EXT = "cpp"
-
+for arg in sys.argv[:]:
+    if arg.find("--with-omicsds=") == 0 and len(arg.split("=")[1]) > 0:
+        OMICSDS_INSTALL_PATH = os.path.expanduser(arg.split("=")[1])
+        sys.argv.remove(arg)
+    if arg.find("--with-version=") == 0 and len(arg.split("=")[1]) > 0:
+        WITH_VERSION = arg.split("=")[1]
+        sys.argv.remove(arg)
+    if arg.find("--cythonize") == 0:
+        USE_CYTHON = True
+        EXT = "pyx"
+        sys.argv.remove(arg)
 
 print(f"Using {OMICSDS_INSTALL_PATH} for OmicsDS library.")
 
 OMICSDS_INCLUDE_DIR = os.path.join(OMICSDS_INSTALL_PATH, "include/omicsds")
 OMICSDS_LIB_DIR = os.path.join(OMICSDS_INSTALL_PATH, "lib")
 
-EXTENTIONS = {
+EXTENSIONS = {
     "api": {
         "language": "c++",
         "include_dirs": [
@@ -71,7 +74,10 @@ EXTENTIONS = {
         ],
         "library_dirs": [
             OMICSDS_LIB_DIR,
-        ]
+        ],
+        "extra_compile_args": [
+            "-std=c++17",
+        ],
     }
 }
 
@@ -80,9 +86,9 @@ print(f"Using cython: {USE_CYTHON}")
 def build_extensions():
     if USE_CYTHON:
         from Cython.Build.Dependencies import cythonize
-
     extensions = []
-    for extension, config in EXTENTIONS.items():
+    for extension, config in EXTENSIONS.items():
+        print(extension)
         extensions.append(
             Extension(
                 name=f"omicsds.{extension}",
@@ -108,10 +114,10 @@ setup(
     description="Experimental Python Bindings for querying OmicsDS",
     long_description=description,
     long_description_content_type="text/markdown",
-    author="Omics Data Automation",
-    author_email="support@omicsautomation.com",
-    maintainer="Omics Data Automation",
-    maintainer_email="support@omicsautomation.com",
+    author="datma inc.",
+    author_email="support@datma.com",
+    maintainer="datma inc.",
+    maintainer_email="support@datma.com",
     license="MIT",
     zip_safe=False,
     ext_modules=build_extensions(),
@@ -123,7 +129,7 @@ setup(
     packages=find_packages(include=["omicsds", "omicsds.*"]),
     keywords=["genomics", "omicsds"],
     include_package_data=True,
-    version="0.1.0",
+    version=WITH_VERSION,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -133,8 +139,8 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS :: MacOS X",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
