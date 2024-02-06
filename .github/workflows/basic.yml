@@ -177,14 +177,3 @@ jobs:
     with:
       runner: ubuntu-20.04
 
-  docker:
-    needs: [lint-cpp]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    uses: ./.github/workflows/docker.yml
-    with:
-      runner: ubuntu-20.04
-    secrets:
-      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      DEVELOPER_TOKEN: ${{ secrets.DEVELOPER_TOKEN }}
