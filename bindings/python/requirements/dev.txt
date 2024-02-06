@@ -1,0 +1,14 @@
+-r prod.txt
+
+# Testing
+pytest~=7.2
+
+# Linting & Formatting
+flake8~=6.0
+cython-lint~=0.12
+black~=23.1
+bandit~=1.7
+isort~=5.12
+
+# Package building
+build~=0.10

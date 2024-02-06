@@ -1,0 +1,38 @@
+name: Python build
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+
+jobs:
+  python-build:
+    name: Python Build
+    runs-on: ${{ inputs.runner }}
+    env:
+      OMICSDS_INSTALL_DIR: install-${{ inputs.runner }}
+      OMICSDS_HOME: ${{github.workspace}}/install-${{ inputs.runner }}
+      LD_LIBRARY_PATH: ${{github.workspace}}/install-${{ inputs.runner }}/lib
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Download Install Artifact from main build
+      uses: actions/download-artifact@v3
+      with:
+        name: OmicsDS-Install-${{runner.os}}
+
+    - name: Extract from downloaded install artifact
+      working-directory: ${{github.workspace}}
+      run: tar -xvf $OMICSDS_HOME.tar && ls -l $OMICSDS_HOME
+
+    - name: Lint & Test Python bindings
+      working-directory: ${{github.workspace}}/bindings/python
+      run: |
+        python3 -m pip install -r requirements/dev.txt
+        ./scripts/lint_sources.sh
+        python3 -m build -s -C="--build-option=--cythonize"
+        pip3 install dist/*.tar.gz
+        cd .. && python3 -m pytest python

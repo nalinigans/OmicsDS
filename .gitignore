@@ -1,0 +1,67 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+#python
+*.pyc
+
+#emacs
+*~
+\#*\#
+.\#*
+TAGS
+
+#Xcode
+.DS_Store
+
+#Build/Install directories
+build/
+install/
+release/
+
+#gperf output
+omicsds_import.gperf.*
+
+# VS Code
+.devcontainer
+.vscode
+
+# Python
+env/
+venv/
+.env/
+.eggs/
+dist/
+*.egg-info/
+
+# Cython generated files
+bindings/python/omicsds/*.cpp

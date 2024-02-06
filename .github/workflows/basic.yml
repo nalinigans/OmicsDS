@@ -1,0 +1,190 @@
+#
+# basic.yml
+#
+# The MIT License
+#
+# Copyright (c) 2022 Omics Data Automation, Inc.
+# Copyright (c) 2023 dātma, inc™
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+name: build 
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+
+env:
+  CMAKE_BUILD_TYPE: Coverage
+  CMAKE_BUILD_DIR: ${{github.workspace}}/build
+  PROTOBUF_VERSION: 3.21.6
+  CATCH2_VER: 2.13.9
+
+jobs:
+  lint-cpp:
+    name: Lint C++
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check C++ Formatting
+        working-directory: ${{github.workspace}}
+        run: |
+          sudo apt update -qq
+          sudo apt install -y clang-format
+          .github/scripts/clang_format.sh
+
+  build:
+    name: Main Build
+    needs: lint-cpp
+    strategy:
+      matrix:
+        os: [macos-11, ubuntu-20.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      OMICSDS_INSTALL_DIR: install-${{matrix.os}}
+      OMICSDS_HOME: ${{github.workspace}}/install-${{matrix.os}}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create LFS file list
+      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+
+    # All caching actions should happen before  restoration. This action automatically
+    # caches the artifacts as post-build operations
+    - name: Cache LFS files
+      uses: actions/cache@v3
+      with:
+        path: .git/lfs
+        key: lfs-${{ hashFiles('.lfs-assets-id') }}-v1-${{runner.os}}
+
+    - name: Cache AWS SDK
+      uses: actions/cache@v3
+      with:
+        path: ~/awssdk-install
+        key: awssdk-v1-${{matrix.os}}
+
+    - name: Cache GCS SDK
+      uses: actions/cache@v3
+      with:
+        path: ~/gcssdk-install
+        key: gcssdk-v1-${{matrix.os}}
+
+    - name: Cache Protobuf
+      uses: actions/cache@v3
+      with:
+        path: ~/protobuf-install/{{env.PROTOBUF_VERSION}}
+        key: protobuf-install-v{{env.PROTOBUF_VERSION}}-${{matrix.os}}
+  
+    - name: Cache Catch2 artifacts
+      if: startsWith(matrix.os,'ubuntu')
+      uses: actions/cache@v3
+      with:
+        path: ~/catch2-install
+        key: catch2-v${{env.CATCH2_VER}}-${{matrix.os}}
+
+    - name: Create Build Environment
+      shell: bash
+      run: |
+        git lfs pull
+        mkdir -p $CMAKE_BUILD_DIR
+
+    - name: Build - Ubuntu
+      if: startsWith(matrix.os,'ubuntu')
+      shell: bash
+      working-directory: ${{env.CMAKE_BUILD_DIR}}
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get -y install cmake lcov
+        sudo apt-get -y install zlib1g-dev libssl-dev uuid-dev libcurl4-openssl-dev zstd
+        INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME \
+                                -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION -DCMAKE_PREFIX_PATH=~/catch2-install
+        make -j4
+        cmake --build . --target test --parallel 4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
+        make install
+
+    - name: Build - MacOS
+      if: startsWith(matrix.os, 'macOS')
+      shell: bash
+      working-directory: ${{env.CMAKE_BUILD_DIR}}
+      run: |
+        brew list automake &>/dev/null || brew install automake
+        brew list cmake &>/dev/null || brew install cmake
+        brew list lcov &>/dev/null || brew install lcov
+        brew list openssl@1.1 &>/dev/null || brew install openssl@1.1
+        brew list ossp-uuid &>/dev/null || brew install ossp-uuid
+        brew list zstd &>/dev/null || brew install zstd
+        brew list catch2 &>/dev/null || brew install catch2
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DDISABLE_OPENMP=1 -DCMAKE_INSTALL_PREFIX=$OMICSDS_HOME \
+                                -DOMICSDS_PROTOBUF_VERSION=$PROTOBUF_VERSION
+        make -j4
+        cmake --build . --target test --parallel 4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
+        make install
+      env:
+        OPENSSL_ROOT_DIR: /usr/local/opt/openssl@1.1
+
+    - name: Tar Install Artifacts
+      working-directory: ${{github.workspace}}
+      run: tar -cvf $OMICSDS_INSTALL_DIR.tar $OMICSDS_INSTALL_DIR 
+
+    - name: Upload Install Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: OmicsDS-Install-${{runner.os}}
+        path: ${{env.OMICSDS_HOME}}.tar
+        retention-days: 1
+
+    - name: Upload Report to CodeCov
+      uses: codecov/codecov-action@v3
+
+  docs:
+    needs: build
+    uses: ./.github/workflows/docs.yml
+    with:
+      runner: ubuntu-20.04
+    
+  r-lang:
+    needs: build
+    uses: ./.github/workflows/R.yml
+    with:
+      runner: ubuntu-20.04
+
+  python:
+    needs: build
+    uses: ./.github/workflows/python.yml
+    with:
+      runner: ubuntu-20.04
+
+  docker:
+    needs: [lint-cpp]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/docker.yml
+    with:
+      runner: ubuntu-20.04
+    secrets:
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      DEVELOPER_TOKEN: ${{ secrets.DEVELOPER_TOKEN }}

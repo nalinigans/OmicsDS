@@ -1,0 +1,20 @@
+Directory with example use cases for OmicsDS
+Note: as of time of writing, the workspace should be deleted before running ingestion
+
+Example 1: Ingest and Export two sam files
+Note: the sample name for sam files is the filename stripped of the path (e.g. toy.sam)
+<path to OmicsDS build dir>/tools/omicsds import -m human_g1k_v37.fasta.fai -w workspace -a array -l sam_list -r -s sam_map
+<path to OmicsDS build dir>/tools/omicsds query -w workspace -a array --export-sam
+
+Example 2: Ingest two bed files with interval-level ingestion
+Note: the sample name for bed files must be specified in the header by the string 'description="[sample_name]"', see s0.bed and s1.bed
+<path to OmicsDS build dir>/tools/omicsds import -m human_g1k_v37.fasta.fai -w workspace -a array -i -l small_list -s small_map
+
+Example 3: Ingest small matrix file (unsorted matrix)
+<path to OmicsDS build dir>/tools/omicsds import -w workspace -a array -f -l small_matrix_list -s small_map
+
+Example 4: Ingest small matrix file where the feature ids are sorted alphabetically
+<path to OmicsDS build dir>/tools/omicsds import -w workspace -a array -f -l small_matrix_sorted_list -s small_map
+
+Example 5: Perform generic query. Depending on the type of array, it will list the file contents to standard output
+<path to OmicsDS build dir>/tools/omicsds query -w workspace -a array -g
