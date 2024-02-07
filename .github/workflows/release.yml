@@ -42,8 +42,8 @@ jobs:
         version_output: ${{env.VERSION_NUMBER}}
     strategy:
       matrix:
-        #os: [ubuntu22.04, macos-12]
-        os: [ubuntu22.04]
+        #os: [ubuntu-22.04, macos-12]
+        os: [ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     env:
        MACOSX_DEPLOYMENT_TARGET: 12.1
