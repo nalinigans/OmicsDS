@@ -59,12 +59,16 @@ jobs:
 
       - name: Install prereqs
         run: $GITHUB_WORKSPACE/.github/scripts/install_prereqs.sh release
+        env:
+          MACOSX_DEPLOYMENT_TARGET: 12.1
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.2
+        uses: pypa/cibuildwheel@v2.16.5
         env:
+          MACOSX_DEPLOYMENT_TARGET: 12.1
           CIBW_ARCHS: "x86_64"
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt"
+          CIBW_BUILD: "cp311-*"
           CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=/usr/local"
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair -w {dest_dir} {wheel}"
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
