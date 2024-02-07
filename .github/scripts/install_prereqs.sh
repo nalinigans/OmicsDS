@@ -87,6 +87,7 @@ install_prereqs_for_macos() {
 install_prereqs_for_centos7() {
   sudo yum install -y centos-release-scl &&
     sudo yum install -y devtoolset-11 &&
+    source /opt/rh/devtoolset-11/enable &&
     sudo yum install -y -q deltarpm &&
     sudo yum update -y -q &&
     sudo yum install -y -q epel-release &&
@@ -97,7 +98,6 @@ install_prereqs_for_centos7() {
     sudo yum install -y -q libuuid libuuid-devel &&
     sudo yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
-    source /opt/rh/devtoolset-11/enable
     install_openssl3
     install_curl
   elif [[ ! -d ~/catch2-install ]]; then

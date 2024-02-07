@@ -125,7 +125,7 @@ setup(
     extras_require={
         "dev": dev_requirements,
     },
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     packages=find_packages(include=["omicsds", "omicsds.*"]),
     keywords=["genomics", "omicsds"],
     include_package_data=True,
