@@ -39,7 +39,7 @@ USE_CYTHON = False
 EXT = "cpp"
 
 # Scan environment and arg list to determine if we should cythonize or not
-print(sys.argv)
+print(f"cwd={os.getcwd()} args: {sys.argv}")
 for arg in sys.argv[:]:
     if arg.find("--with-omicsds=") == 0 and len(arg.split("=")[1]) > 0:
         OMICSDS_INSTALL_PATH = os.path.expanduser(arg.split("=")[1])
