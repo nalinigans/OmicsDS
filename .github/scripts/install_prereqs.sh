@@ -36,8 +36,8 @@ install_openssl3() {
         ./Configure darwin64-$(uname -m)-cc no-tests no-shared -fPIC --prefix=$OPENSSL_PREFIX
       else
         CFLAGS=-fPIC ./config no-tests -fPIC --prefix=$OPENSSL_PREFIX --openssldir=$OPENSSL_PREFIX
-      fi 
-      make -j4 && sudo make install_sw && echo "Installing OpenSSL DONE"
+      fi
+    make -j4 && $SUDO make install_sw && echo "Installing OpenSSL DONE"
     rm -fr /tmp/openssl*
     popd
   fi
@@ -57,7 +57,7 @@ install_curl() {
     tar xzf curl-$CURL_VERSION.tar.gz &&
     cd curl-$CURL_VERSION &&
     ./configure --disable-shared --with-pic -without-zstd --with-ssl=$OPENSSL_PREFIX --prefix $CURL_PREFIX &&
-      make && sudo make install && echo "Installing CURL DONE"
+      make && $SUDO make install && echo "Installing CURL DONE"
     rm -fr /tmp/curl
     popd
   fi
@@ -85,18 +85,12 @@ install_prereqs_for_macos() {
 }
 
 install_prereqs_for_centos7() {
-  sudo yum install -y centos-release-scl &&
-    sudo yum install -y devtoolset-11 &&
-    source /opt/rh/devtoolset-11/enable &&
-    sudo yum install -y -q deltarpm &&
-    sudo yum update -y -q &&
-    sudo yum install -y -q epel-release &&
-    sudo yum install -y -q which wget git &&
-    sudo yum install -y -q autoconf automake libtool unzip &&
-    sudo yum install -y -q cmake3 patch &&
-    sudo yum install -y -q perl perl-IPC-Cmd &&
-    sudo yum install -y -q libuuid libuuid-devel &&
-    sudo yum install -y -q curl libcurl-devel
+    yum install -y -q which wget git &&
+    yum install -y -q autoconf automake libtool unzip &&
+    yum install -y -q cmake3 patch &&
+    yum install -y -q perl perl-IPC-Cmd &&
+    yum install -y -q libuuid libuuid-devel &&
+    yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
     install_openssl3
     install_curl
@@ -117,6 +111,8 @@ install_prereqs_for_ubuntu() {
     INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
   fi
 }
+
+SUDO=$(which install) || SUDO=""
 
 case $(uname) in
   Linux )
@@ -153,5 +149,5 @@ if [[ $1 == "release" ]]; then
   cmake $GITHUB_WORKSPACE -DDISABLE_OPENMP=1
   make -j4
   cmake --build .
-  sudo make install
+  $SUDO make install
 fi
