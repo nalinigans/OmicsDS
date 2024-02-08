@@ -68,6 +68,7 @@ jobs:
           CIBW_BEFORE_ALL: ".github/scripts/install_prereqs.sh release"
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
           CIBW_BUILD: "cp311-*"
+          CIBW_SKIP: "*musllinux*"
           CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=/usr/local --build-option=--cythonize"
           CIBW_ENVIRONMENT_LINUX: LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
           CIBW_ENVIRONMENT_MACOS: DYLD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
