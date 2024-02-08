@@ -55,6 +55,8 @@ execute_process(
 set(OMICSDS_RELEASE_VERSION "0.0.1-SNAPSHOT" CACHE STRING "OmicsDS release version")
 set(OMICSDS_VERSION "${OMICSDS_RELEASE_VERSION}-${GIT_COMMIT_HASH}" CACHE STRING "OmicsDS full version string")
 
+option(BUILD_DISTRIBUTABLE_LIBRARY "Build the OmicsDS library with minimal runtime dependencies")
+
 if(APPLE)
   set(DISABLE_OPENMP True CACHE BOOL "Disable OpenMP")
 else()
@@ -67,6 +69,14 @@ option(DISABLE_BINDINGS "Disable build/test of bindings")
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
+endif()
+
+if(BUILD_DISTRIBUTABLE_LIBRARY)
+  set(OPENSSL_USE_STATIC_LIBS TRUE)
+  set(DISABLE_OPENMP TRUE)
+  set(DISABLE_TOOLS TRUE)
+  set(DISABLE_TESTS TRUE)
+  set(DISABLE_BINDINGS TRUE)
 endif()
 
 set(HTSLIB_INSTALL_DIR "" CACHE PATH "Path to htslib install directory")
