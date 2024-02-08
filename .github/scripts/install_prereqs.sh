@@ -168,7 +168,7 @@ case $(uname) in
     fi
     ;;
   Darwin )
-    if [[ $INSTALL_PREFIX == "/usr/local"]]; then
+    if [[ $INSTALL_PREFIX == "/usr/local" ]]; then
       SUDO="sudo"
     fi
     install_prereqs_for_macos $1
