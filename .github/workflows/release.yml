@@ -60,14 +60,12 @@ jobs:
             #echo VERSION_NUMBER=${VERSION_NUMBER} >> $GITHUB_ENV
             echo VERSION_NUMBER="0.0.1" >> $GITHUB_ENV
 
-      - name: Install prereqs
-        run: $GITHUB_WORKSPACE/.github/scripts/install_prereqs.sh release
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_LINUX: "x86_64"
+          CIBW_BEFORE_ALL: ".github/scripts/install_prereqs.sh release"
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
           CIBW_BUILD: "cp311-*"
           CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=/usr/local --build-option=--cythonize"
