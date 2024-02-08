@@ -85,10 +85,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/setup-python@v4
-        with:
-        python-version: 3.9
-
       - name: Download Wheels
         uses: actions/download-artifact@v4
         with:
