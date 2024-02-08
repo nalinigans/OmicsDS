@@ -76,4 +76,34 @@ jobs:
       - name: Upload Wheel artifacts
         uses: actions/upload-artifact@v4
         with:
+          name: omicsds_wheels_{{ matrix.os }}
           path: wheelhouse/*.whl
+
+  publish_wheels:
+    name: Publish wheels
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    permissions:
+      id-tojen: write
+
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+        python-version: 3.9
+
+      - name: Download Wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publish
+        run: |
+          apt-get update; apt-get -y install curl zip
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          ./aws/install
+          pip install twine
+          echo "Contents of dist dir: "
+          ls -l dist
+          #aws codeartifact login --tool twine --repository ODA-dev --domain oda-dev --domain-owner 037083108678
+          #twine upload --verbose --repository codeartifact dist/*
