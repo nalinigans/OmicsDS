@@ -97,7 +97,7 @@ install_prereqs_for_centos7() {
     yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
     install_openssl3
-    install_curl
+    #install_curl
   elif [[ ! -d ~/catch2-install ]]; then
     INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
   fi
