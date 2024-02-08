@@ -83,8 +83,6 @@ jobs:
     name: Publish wheels
     needs: build_wheels
     runs-on: ubuntu-latest
-    permissions:
-      id-tojen: write
 
     steps:
       - uses: actions/setup-python@v4
