@@ -61,6 +61,10 @@ else()
   set(DISABLE_OPENMP False CACHE BOOL "Disable OpenMP")
 endif()
 
+option(DISABLE_TOOLS "Disable build of tools")
+option(DISABLE_TESTS "Disable testing")
+option(DISABLE_BINDINGS "Disable build/test of bindings")
+
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -116,7 +120,9 @@ endif()
 
 # Honor visibility properties for all target types.
 # https://www.cmake.org/cmake/help/latest/policy/CMP0063.html
-#cmake_policy(SET CMP0063 NEW)
+if(POLICY CMP0063)
+  cmake_policy(SET CMP0063 NEW)
+endif()
 
 # Collect profiling stats to use with gperf/pprof
 # To install gperftools - sudo yum -y install gperftools - Centos 7
@@ -168,7 +174,9 @@ find_package(ProtobufWrapper REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 # Catch2
-include(SetCatch2Version)
+if(NOT DISABLE_TESTS)
+  include(SetCatch2Version)
+endif()
 
 set(OMICSDS_DEPENDENCIES
   ${HTSLIB_LIBRARY}
@@ -187,14 +195,20 @@ set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG -g3 -gdwarf-3 --coverage")
 include_directories(src/loader)
 
 # Build and Test OmicsDS
-enable_testing()
+if(NOT DISABLE_TESTS)
+  enable_testing()
+endif()
 add_subdirectory(src)
 
 # Build tools
-add_subdirectory(tools)
+if(NOT DISABLE_TOOLS)
+  add_subdirectory(tools)
+endif()
 
 # Bindings
-add_subdirectory(bindings)
+if(NOT DISABLE_BINDINGS)
+  add_subdirectory(bindings)
+endif()
 
 # Docs
 if (DEFINED BUILD_DOCS)

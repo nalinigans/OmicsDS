@@ -21,12 +21,14 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set -e 
+set -e
+
+INSTALL_PREFIX=${INSTALL_PREFIX:-/usr/local}
 
 install_openssl3() {
   echo "Building openssl..."
-  OPENSSL_PREFIX=${OPENSSL_PREFIX:-/usr/local}
-  OPENSSL_VERSION=3.0.11
+  OPENSSL_PREFIX=${OPENSSL_PREFIX:-$INSTALL_PREFIX}
+  OPENSSL_VERSION=${OPENSSL_VERSION:-3.0.12}
   if [[ ! -d $OPENSSL_PREFIX/include/openssl ]]; then
     pushd /tmp
     wget $WGET_NO_CERTIFICATE https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz &&
@@ -41,18 +43,19 @@ install_openssl3() {
       echo "Creating $OPENSSL_PREFIX folder"
       mkdir -p $OPENSSL_PREFIX
     fi
-    make -j4 && make install_sw && echo "Installing OpenSSL DONE"
+    make -j4 && $SUDO make install_sw && echo "Installing OpenSSL DONE"
     rm -fr /tmp/openssl*
     popd
   fi
   export OPENSSL_ROOT_DIR=$OPENSSL_PREFIX
-  if [[ $(uname) == "Linux" ]]; then
-    export LD_LIBRARY_PATH=$OPENSSL_PREFIX:$LD_LIBRARY_PATH
+  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$OPENSSL_PREFIX/lib"* ]]; then
+    export LD_LIBRARY_PATH=$OPENSSL_PREFIX/lib:$LD_LIBRARY_PATH
   fi
 }
 
 install_curl() {
-  CURL_PREFIX=${CURL_PREFIX:-/usr/local}
+  CURL_PREFIX=${CURL_PREFIX:-$INSTALL_PREFIX}
+  CURL_VERSION=${CURL_VERSION:-7.83.1}
   if [[ ! -f $CURL_PREFIX/libcurl.a ]]; then
     echo "Installing CURL into $CURL_PREFIX"
     pushd /tmp
@@ -65,8 +68,31 @@ install_curl() {
     rm -fr /tmp/curl
     popd
   fi
-  if [[ $(uname) == "Linux" ]]; then
-    export LD_LIBRARY_PATH=$CURL_PREFIX:$LD_LIBRARY_PATH
+  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$CURL_PREFIX/lib"* ]]; then
+    export LD_LIBRARY_PATH=$CURL_PREFIX/lib:$LD_LIBRARY_PATH
+  fi
+}
+
+install_uuid() {
+  UUID_PREFIX=${UUID_PREFIX:-$INSTALL_PREFIX}
+  UUID_VERSION=${UUID_VERSION:-1.0.3}
+  if [[ ! -f $UUID_PREFIX/libuuid.a ]]; then
+    echo "Installing libuuid into $UUID_PREFIX"
+    pushd /tmp
+    wget $WGET_NO_CERTIFICATE https://sourceforge.net/projects/libuuid/files/libuuid-$UUID_VERSION.tar.gz &&
+      tar -xvzf libuuid-$UUID_VERSION.tar.gz &&
+      cd libuuid-$UUID_VERSION &&
+      sed -i s/2.69/2.63/ configure.ac &&
+      aclocal &&
+      automake --add-missing &&
+      ./configure --with-pic CFLAGS="-I/usr/include/x86_64-linux-gnu" --disable-shared --enable-static --prefix $UUID_PREFIX &&
+      autoreconf -i -f &&
+      make && $SUDO make install && echo "Installing libuuid DONE"
+    rm -fr /tmp/libuuid*
+    popd
+  fi
+  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$UUID_PREFIX/lib"* ]]; then
+    export LD_LIBRARY_PATH=$UUID_PREFIX/lib:$LD_LIBRARY_PATH
   fi
 }
 
@@ -97,7 +123,8 @@ install_prereqs_for_centos7() {
     yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
     install_openssl3
-    #install_curl
+    install_curl
+    install_uuid
   elif [[ ! -d ~/catch2-install ]]; then
     INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
   fi
@@ -111,6 +138,7 @@ install_prereqs_for_ubuntu() {
   if [[ $1 == "release" ]]; then
     install_openssl3
     install_curl
+    install_uuid
   elif [[ ! -d ~/catch2-install ]]; then
     INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
   fi
@@ -140,6 +168,9 @@ case $(uname) in
     fi
     ;;
   Darwin )
+    if [[ $INSTALL_PREFIX == "/usr/local"]]; then
+      SUDO="sudo"
+    fi
     install_prereqs_for_macos $1
     ;;
   * )
@@ -148,8 +179,10 @@ case $(uname) in
 esac
 
 if [[ $1 == "release" ]]; then
-  cmake $GITHUB_WORKSPACE -DDISABLE_OPENMP=1
+  mkdir $GITHUB_WORKSPACE/build &&
+    pushd $GITHUB_WORKSPACE/build
+  # Interested only in the shared library for a wheels release
+  cmake $GITHUB_WORKSPACE -DDISABLE_OPENMP=True -DDISABLE_TOOLS=True -DDISABLE_TESTS=True -DDISABLE_BINDINGS=True
   make -j4
-  cmake --build .
   $SUDO make install
 fi
