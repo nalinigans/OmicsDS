@@ -41,7 +41,7 @@ install_openssl3() {
       echo "Creating $OPENSSL_PREFIX folder"
       mkdir -p $OPENSSL_PREFIX
     fi
-    make -j4 && $SUDO make install_sw && echo "Installing OpenSSL DONE"
+    make -j4 && make install_sw && echo "Installing OpenSSL DONE"
     rm -fr /tmp/openssl*
     popd
   fi
@@ -115,9 +115,6 @@ install_prereqs_for_ubuntu() {
     INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
   fi
 }
-
-SUDO=$(which sudo) || SUDO=""
-echo "SUDO is $SUDO"
 
 case $(uname) in
   Linux )
