@@ -181,7 +181,7 @@ esac
 if [[ $1 == "release" ]]; then
     # Interested only in the shared library for a wheels release
   mkdir build &&
-    pushd buildb &&
+    pushd build &&
     cmake .. -DDISABLE_OPENMP=True -DDISABLE_TOOLS=True -DDISABLE_TESTS=True -DDISABLE_BINDINGS=True &&
     make -j4 &&
     $SUDO make install &&
