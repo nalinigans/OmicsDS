@@ -37,6 +37,10 @@ install_openssl3() {
       else
         CFLAGS=-fPIC ./config no-tests -fPIC --prefix=$OPENSSL_PREFIX --openssldir=$OPENSSL_PREFIX
       fi
+    if [[ ! -d $OPENSSL_PREFIX ]]; then
+      echo "Creating $OPENSSL_PREFIX folder"
+      mkdir -p $OPENSSL_PREFIX
+    fi
     make -j4 && $SUDO make install_sw && echo "Installing OpenSSL DONE"
     rm -fr /tmp/openssl*
     popd
@@ -113,6 +117,7 @@ install_prereqs_for_ubuntu() {
 }
 
 SUDO=$(which install) || SUDO=""
+echo "SUDO is $SUDO"
 
 case $(uname) in
   Linux )
