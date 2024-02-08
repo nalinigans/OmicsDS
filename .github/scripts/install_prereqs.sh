@@ -179,10 +179,11 @@ case $(uname) in
 esac
 
 if [[ $1 == "release" ]]; then
-  mkdir $GITHUB_WORKSPACE/build &&
-    pushd $GITHUB_WORKSPACE/build
-  # Interested only in the shared library for a wheels release
-  cmake $GITHUB_WORKSPACE -DDISABLE_OPENMP=True -DDISABLE_TOOLS=True -DDISABLE_TESTS=True -DDISABLE_BINDINGS=True
-  make -j4
-  $SUDO make install
+    # Interested only in the shared library for a wheels release
+  mkdir build &&
+    pushd buildb &&
+    cmake .. -DDISABLE_OPENMP=True -DDISABLE_TOOLS=True -DDISABLE_TESTS=True -DDISABLE_BINDINGS=True &&
+    make -j4 &&
+    $SUDO make install &&
+    popd
 fi
