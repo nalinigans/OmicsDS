@@ -116,7 +116,7 @@ install_prereqs_for_ubuntu() {
   fi
 }
 
-SUDO=$(which install) || SUDO=""
+SUDO=$(which sudo) || SUDO=""
 echo "SUDO is $SUDO"
 
 case $(uname) in
