@@ -115,13 +115,16 @@ install_prereqs_for_macos() {
 }
 
 install_prereqs_for_centos7() {
-    yum install -y -q which wget git &&
+  echo "we are here"
+  echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" 
+  yum install -y -q which wget git &&
     yum install -y -q autoconf automake libtool unzip &&
     yum install -y -q cmake3 patch &&
     yum install -y -q perl perl-IPC-Cmd &&
     yum install -y -q libuuid libuuid-devel &&
     yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
+    echo "we are here2"
     install_openssl3
     install_curl
     install_uuid
@@ -182,7 +185,7 @@ if [[ $1 == "release" ]]; then
     # Interested only in the shared library for a wheels release
   mkdir build &&
     pushd build &&
-    cmake .. -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX -DBUILD_DISTRIBUTABLE_LIBRARY=True &&
+    cmake .. -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DBUILD_DISTRIBUTABLE_LIBRARY=True &&
     make -j4 &&
     $SUDO make install &&
     popd
