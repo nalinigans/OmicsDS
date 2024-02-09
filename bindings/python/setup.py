@@ -65,10 +65,7 @@ EXTENSIONS = {
             "src/_processor",
             np.get_include(),
         ],
-        "sources": [
-            f"omicsds/api.{EXT}",
-            "src/_processor/omicsds_processor.cc"
-        ],
+        "sources": [f"omicsds/api.{EXT}", "src/_processor/omicsds_processor.cc"],
         "libraries": [
             "omicsds",
         ],
@@ -82,6 +79,7 @@ EXTENSIONS = {
 }
 
 print(f"Using cython: {USE_CYTHON}")
+
 
 def build_extensions():
     if USE_CYTHON:
@@ -98,6 +96,7 @@ def build_extensions():
     if USE_CYTHON:
         extensions = cythonize(extensions, force=True)
     return extensions
+
 
 with open("requirements/prod.txt") as f:
     prod_requirements = f.readlines()
@@ -142,5 +141,6 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
 )

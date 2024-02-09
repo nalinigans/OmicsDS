@@ -3,7 +3,7 @@
 #
 # The MIT License
 #
-# Copyright (c) 2023-2024 dātma, inc™
+# Copyright (c) 2024 dātma, inc™
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -67,6 +67,7 @@ jobs:
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
           CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
           CIBW_SKIP: "*musllinux*"
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=/usr/local --build-option=--cythonize"
           CIBW_ENVIRONMENT_LINUX: LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
           CIBW_ENVIRONMENT_MACOS: DYLD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH

@@ -9,6 +9,3 @@ line-length = 100
 profile = "black"
 line_length = 100
 
-[tool.cibuildwheel]
-# linux uses manylinux2014 as default which uses Centos 7 image
-manylinux-x86_64-image = "manylinux2014"
