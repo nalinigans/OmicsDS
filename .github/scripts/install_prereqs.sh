@@ -116,7 +116,7 @@ install_prereqs_for_macos() {
 
 install_prereqs_for_centos7() {
   echo "we are here"
-  echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" 
+  echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
   yum install -y -q which wget git &&
     yum install -y -q autoconf automake libtool unzip &&
     yum install -y -q cmake3 patch &&
@@ -146,6 +146,8 @@ install_prereqs_for_ubuntu() {
     INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
   fi
 }
+
+echo "INSTALL_PREFIX=$INSTALL_PREFIX"
 
 case $(uname) in
   Linux )
