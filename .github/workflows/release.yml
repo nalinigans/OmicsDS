@@ -66,7 +66,7 @@ jobs:
         env:
           CIBW_ARCHS: "x86_64"
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_BEFORE_ALL: "github/scripts/install_prereqs.sh release"
+          CIBW_BEFORE_ALL: "<project>/.github/scripts/install_prereqs.sh release"
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
           CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
           CIBW_SKIP: "*musllinux*"
