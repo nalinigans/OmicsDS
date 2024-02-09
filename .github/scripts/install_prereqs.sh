@@ -37,7 +37,7 @@ install_openssl3() {
       if [[ $(uname) == "darwin" ]]; then
         ./Configure darwin64-$(uname -m)-cc no-tests no-shared -fPIC --prefix=$OPENSSL_PREFIX
       else
-        CFLAGS=-fPIC ./config no-tests -fPIC --prefix=$OPENSSL_PREFIX --openssldir=$OPENSSL_PREFIX
+        CFLAGS=-fPIC ./config no-tests no-shared -fPIC --prefix=$OPENSSL_PREFIX --openssldir=$OPENSSL_PREFIX
       fi
     if [[ ! -d $OPENSSL_PREFIX ]]; then
       echo "Creating $OPENSSL_PREFIX folder"
@@ -49,7 +49,7 @@ install_openssl3() {
   fi
   export OPENSSL_ROOT_DIR=$OPENSSL_PREFIX
   if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$OPENSSL_PREFIX/lib"* ]]; then
-    export LD_LIBRARY_PATH=$OPENSSL_PREFIX/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$OPENSSL_PREFIX/lib:$OPENSSL_PREFIX/lib64:$LD_LIBRARY_PATH
   fi
 }
 
@@ -68,8 +68,8 @@ install_curl() {
     rm -fr /tmp/curl
     popd
   fi
-  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$CURL_PREFIX/lib"* ]]; then
-    export LD_LIBRARY_PATH=$CURL_PREFIX/lib:$LD_LIBRARY_PATH
+  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$CURL_PREFIX/lib64"* ]]; then
+    export LD_LIBRARY_PATH=$CURL_PREFIX/lib:$CURL_PREFIX/lib:$LD_LIBRARY_PATH
   fi
 }
 
@@ -92,7 +92,7 @@ install_uuid() {
     popd
   fi
   if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$UUID_PREFIX/lib"* ]]; then
-    export LD_LIBRARY_PATH=$UUID_PREFIX/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$UUID_PREFIX/lib:$UUID_PREFIX/lib64:$LD_LIBRARY_PATH
   fi
 }
 
