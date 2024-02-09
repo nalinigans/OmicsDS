@@ -90,7 +90,7 @@ jobs:
 
       - name: Publish
         run: |
-          apt-get update; apt-get -y install curl zip
+          sudo apt-get update && sudo apt-get -y install curl zip
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip awscliv2.zip
           ./aws/install
