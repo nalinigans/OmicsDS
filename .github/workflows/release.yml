@@ -42,8 +42,7 @@ jobs:
         version_output: ${{env.VERSION_NUMBER}}
     strategy:
       matrix:
-        #os: [ubuntu-22.04, macos-12]
-        os: [ubuntu-22.04]
+        os: [ubuntu-22.04, macos-12]
     runs-on: ${{ matrix.os }}
     env:
        MACOSX_DEPLOYMENT_TARGET: 12.1
@@ -66,8 +65,7 @@ jobs:
           CIBW_ARCHS: "x86_64"
           CIBW_BEFORE_ALL: ".github/scripts/install_prereqs.sh release"
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
-          #CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
-          CIBW_BUILD: "cp311-*"
+          CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
           CIBW_SKIP: "*musllinux*"
           CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=/usr/local --build-option=--cythonize"
           CIBW_ENVIRONMENT_LINUX: LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
@@ -92,14 +90,7 @@ jobs:
 
       - name: Publish
         run: |
-          echo "running which aws..."
-          which aws || echo "aws not found"
-          echo "running ls /usr/local/aws-cli/v2/current"
-          ls -l /usr/local/aws-cli/v2/current
-          sudo apt-get update && sudo apt-get -y install curl zip
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          ./aws/install
+          which aws
           pip install twine
           echo "Contents of dist dir: "
           ls -l dist
