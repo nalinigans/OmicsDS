@@ -66,13 +66,13 @@ jobs:
         env:
           CIBW_ARCHS: "x86_64"
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_BEFORE_ALL: "INSTALL_PREFIX={{ env.INSTALL_PREFIX }} .github/scripts/install_prereqs.sh release"
+          CIBW_BEFORE_ALL: "INSTALL_PREFIX=${{ env.INSTALL_PREFIX }} .github/scripts/install_prereqs.sh release"
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
           CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
           CIBW_SKIP: "*musllinux*"
           CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=${{ env.INSTALL_PREFIX }} --build-option=--cythonize"
           CIBW_ENVIRONMENT_LINUX: LD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib:${{ env.INSTALL_PREFIX }}/lib64
-          CIBW_ENVIRONMENT_MACOS: DYLD_LIBRARY_PATH={{ env.INSTALL_PREFIX }}/lib
+          CIBW_ENVIRONMENT_MACOS: DYLD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib
           CIBW_TEST_REQUIRES: pytest
           CIBW_TEST_COMMAND: pytest {package}/tests
           # Issues with testing linux builds, comment out while debugging
