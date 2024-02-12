@@ -72,7 +72,7 @@ jobs:
           CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
           CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
           CIBW_SKIP: "*musllinux*"
-          CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=${{ env.INSTALL_PREFIX }} --build-option=--cythonize"
+          CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--cythonize"
           CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH=${{ env.INSTALL_PREFIX }}
           CIBW_ENVIRONMENT_MACOS: DYLD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib
           #CIBW_REPAIR_WHEEL_COMMAND_LINUX: "LD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib64 auditwheel repair -w {dest_dir} {wheel}"

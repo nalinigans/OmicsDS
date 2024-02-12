@@ -98,5 +98,5 @@ install(
 
 #install include files
 install(
-  FILES ${OMICSDS_API_INCLUDE} ${EXPORTS_HEADER} DESTINATION include/omicsds
+  FILES ${OMICSDS_API_INCLUDE} ${EXPORTS_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omicsds
   )

@@ -56,6 +56,8 @@ print(f"Using {OMICSDS_INSTALL_PATH} for OmicsDS library.")
 
 OMICSDS_INCLUDE_DIR = os.path.join(OMICSDS_INSTALL_PATH, "include/omicsds")
 OMICSDS_LIB_DIR = os.path.join(OMICSDS_INSTALL_PATH, "lib")
+# Linux installations could be in lib64 too
+OMICSDS_LIB64_DIR = os.path.join(OMICSDS_INSTALL_PATH, "lib64")
 
 EXTENSIONS = {
     "api": {
@@ -71,6 +73,7 @@ EXTENSIONS = {
         ],
         "library_dirs": [
             OMICSDS_LIB_DIR,
+            OMICSDS_LIB64_DIR,
         ],
         "extra_compile_args": [
             "-std=c++17",
