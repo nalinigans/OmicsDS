@@ -188,7 +188,7 @@ if [[ $1 == "release" ]]; then
   # Interested only in static openssl/curl/uuid libraries for a wheels release
   mkdir build &&
     pushd build &&
-    cmake .. -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DBUILD_DISTRIBUTABLE_LIBRARY=True &&
+    cmake .. -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX -DBUILD_DISTRIBUTABLE_LIBRARY=True &&
     make -j4 &&
     $SUDO make install &&
     popd
