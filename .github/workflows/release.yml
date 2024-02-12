@@ -42,7 +42,8 @@ jobs:
         version_output: ${{env.VERSION_NUMBER}}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-12]
+        #os: [ubuntu-22.04, macos-12]
+        os: [ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     env:
        INSTALL_PREFIX: ${{ github.workspace }}/prereqs
