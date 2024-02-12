@@ -74,8 +74,8 @@ jobs:
           CIBW_SKIP: "*musllinux*"
           CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--with-omicsds=${{ env.INSTALL_PREFIX }} --build-option=--cythonize"
           CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH=${{ env.INSTALL_PREFIX }}
-          CIBW_ENVIRONMENT_LINUX: LD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib64:${{ env.INSTALL_PREFIX }}/lib
           CIBW_ENVIRONMENT_MACOS: DYLD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: "LD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib64 auditwheel repair -w {dest_dir} {wheel}"
           CIBW_TEST_REQUIRES: pytest
           CIBW_TEST_COMMAND: pytest {package}/tests
           # Issues with testing linux builds, comment out while debugging
