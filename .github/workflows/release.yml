@@ -59,6 +59,7 @@ jobs:
             fi
             #echo VERSION_NUMBER=${VERSION_NUMBER} >> $GITHUB_ENV
             echo VERSION_NUMBER="0.0.1" >> $GITHUB_ENV
+            echo "Installing OpenSSL/curl/libuuid in $INSTALL_PREFIX"
 
 
       - name: Build wheels

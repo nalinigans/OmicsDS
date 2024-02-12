@@ -30,6 +30,7 @@ install_openssl3() {
   OPENSSL_PREFIX=${OPENSSL_PREFIX:-$INSTALL_PREFIX}
   OPENSSL_VERSION=${OPENSSL_VERSION:-3.0.12}
   if [[ ! -d $OPENSSL_PREFIX/include/openssl ]]; then
+    echo "Installing OpenSSL3 into $OPENSSL_PREFIX"
     pushd /tmp
     wget $WGET_NO_CERTIFICATE https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz &&
       tar -xvzf openssl-$OPENSSL_VERSION.tar.gz &&
@@ -48,9 +49,9 @@ install_openssl3() {
     popd
   fi
   export OPENSSL_ROOT_DIR=$OPENSSL_PREFIX
-  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$OPENSSL_PREFIX/lib"* ]]; then
-    export LD_LIBRARY_PATH=$OPENSSL_PREFIX/lib:$OPENSSL_PREFIX/lib64:$LD_LIBRARY_PATH
-  fi
+  #if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$OPENSSL_PREFIX/lib"* ]]; then
+  #  export LD_LIBRARY_PATH=$OPENSSL_PREFIX/lib:$OPENSSL_PREFIX/lib64:$LD_LIBRARY_PATH
+  #fi
 }
 
 install_curl() {
@@ -68,9 +69,9 @@ install_curl() {
     rm -fr /tmp/curl
     popd
   fi
-  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$CURL_PREFIX/lib64"* ]]; then
-    export LD_LIBRARY_PATH=$CURL_PREFIX/lib:$CURL_PREFIX/lib:$LD_LIBRARY_PATH
-  fi
+  #if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$CURL_PREFIX/lib64"* ]]; then
+  #  export LD_LIBRARY_PATH=$CURL_PREFIX/lib:$CURL_PREFIX/lib:$LD_LIBRARY_PATH
+  #fi
 }
 
 install_uuid() {
@@ -91,9 +92,9 @@ install_uuid() {
     rm -fr /tmp/libuuid*
     popd
   fi
-  if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$UUID_PREFIX/lib"* ]]; then
-    export LD_LIBRARY_PATH=$UUID_PREFIX/lib:$UUID_PREFIX/lib64:$LD_LIBRARY_PATH
-  fi
+  #if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$UUID_PREFIX/lib"* ]]; then
+  #  export LD_LIBRARY_PATH=$UUID_PREFIX/lib:$UUID_PREFIX/lib64:$LD_LIBRARY_PATH
+  #fi
 }
 
 install_prereqs_for_macos() {
@@ -121,8 +122,8 @@ install_prereqs_for_centos7() {
     yum install -y -q autoconf automake libtool unzip &&
     yum install -y -q cmake3 patch &&
     yum install -y -q perl perl-IPC-Cmd &&
-    yum install -y -q libuuid libuuid-devel &&
-    yum install -y -q curl libcurl-devel
+    #yum install -y -q libuuid libuuid-devel &&
+    #yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
     echo "we are here2"
     install_openssl3
