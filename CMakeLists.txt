@@ -134,6 +134,8 @@ if(POLICY CMP0063)
   cmake_policy(SET CMP0063 NEW)
 endif()
 
+include(GNUInstallDirs)
+
 # Collect profiling stats to use with gperf/pprof
 # To install gperftools - sudo yum -y install gperftools - Centos 7
 #                         sudo apt-get install -y google-perftools - Ubuntu
