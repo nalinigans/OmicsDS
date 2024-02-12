@@ -32,7 +32,7 @@ install_openssl3() {
   if [[ ! -d $OPENSSL_PREFIX/include/openssl ]]; then
     echo "Installing OpenSSL3 into $OPENSSL_PREFIX"
     pushd /tmp
-    wget $WGET_NO_CERTIFICATE https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz &&
+    wget -q $WGET_NO_CERTIFICATE https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz &&
       tar -xvzf openssl-$OPENSSL_VERSION.tar.gz &&
       cd openssl-$OPENSSL_VERSION &&
       if [[ $(uname) == "darwin" ]]; then
@@ -61,7 +61,7 @@ install_curl() {
     echo "Installing CURL into $CURL_PREFIX"
     pushd /tmp
     CURL_VERSION_=$(echo $CURL_VERSION | sed -r 's/\./_/g')
-    wget https://github.com/curl/curl/releases/download/curl-$CURL_VERSION_/curl-$CURL_VERSION.tar.gz &&
+    wget -q $WGET_NO_CERTIFICATE https://github.com/curl/curl/releases/download/curl-$CURL_VERSION_/curl-$CURL_VERSION.tar.gz &&
     tar xzf curl-$CURL_VERSION.tar.gz &&
     cd curl-$CURL_VERSION &&
     ./configure --disable-shared --with-pic -without-zstd --with-ssl=$OPENSSL_PREFIX --prefix $CURL_PREFIX &&
@@ -80,7 +80,7 @@ install_uuid() {
   if [[ ! -f $UUID_PREFIX/libuuid.a ]]; then
     echo "Installing libuuid into $UUID_PREFIX"
     pushd /tmp
-    wget $WGET_NO_CERTIFICATE https://sourceforge.net/projects/libuuid/files/libuuid-$UUID_VERSION.tar.gz &&
+    wget -q $WGET_NO_CERTIFICATE https://sourceforge.net/projects/libuuid/files/libuuid-$UUID_VERSION.tar.gz &&
       tar -xvzf libuuid-$UUID_VERSION.tar.gz &&
       cd libuuid-$UUID_VERSION &&
       sed -i s/2.69/2.63/ configure.ac &&
