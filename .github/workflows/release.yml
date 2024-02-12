@@ -61,9 +61,6 @@ jobs:
             #echo VERSION_NUMBER=${VERSION_NUMBER} >> $GITHUB_ENV
             echo VERSION_NUMBER="0.0.1" >> $GITHUB_ENV
             echo "Installing OpenSSL/curl/libuuid in $INSTALL_PREFIX"
-            echo "/usr/local/lib64 contents..."
-            ls -l /usr/local/lib64
-            echo /usr/local/lib64 contents DONE"
             echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 
       - name: Build wheels
