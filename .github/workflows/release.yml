@@ -42,8 +42,7 @@ jobs:
         version_output: ${{env.VERSION_NUMBER}}
     strategy:
       matrix:
-        #os: [ubuntu-22.04, macos-12]
-        os: [ubuntu-22.04]
+        os: [ubuntu-22.04, macos-12]
     runs-on: ${{ matrix.os }}
     env:
        INSTALL_PREFIX: ${{ github.workspace }}/prereqs
@@ -79,7 +78,7 @@ jobs:
           CIBW_TEST_REQUIRES: pytest
           CIBW_TEST_COMMAND: pytest {package}/tests
           # Issues with testing linux builds, comment out while debugging
-          CIBW_TEST_SKIP: "*linux*"
+          #CIBW_TEST_SKIP: "*linux*"
         with:
           package-dir: bindings/python
 

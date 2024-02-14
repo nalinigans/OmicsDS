@@ -49,9 +49,6 @@ install_openssl3() {
     popd
   fi
   export OPENSSL_ROOT_DIR=$OPENSSL_PREFIX
-  #if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$OPENSSL_PREFIX/lib"* ]]; then
-  #  export LD_LIBRARY_PATH=$OPENSSL_PREFIX/lib:$OPENSSL_PREFIX/lib64:$LD_LIBRARY_PATH
-  #fi
 }
 
 install_curl() {
@@ -69,9 +66,6 @@ install_curl() {
     rm -fr /tmp/curl
     popd
   fi
-  #if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$CURL_PREFIX/lib64"* ]]; then
-  #  export LD_LIBRARY_PATH=$CURL_PREFIX/lib:$CURL_PREFIX/lib:$LD_LIBRARY_PATH
-  #fi
 }
 
 install_uuid() {
@@ -92,9 +86,6 @@ install_uuid() {
     rm -fr /tmp/libuuid*
     popd
   fi
-  #if [[ $(uname) == "Linux" && $LD_LIBRARY_PATH != *"$UUID_PREFIX/lib"* ]]; then
-  #  export LD_LIBRARY_PATH=$UUID_PREFIX/lib:$UUID_PREFIX/lib64:$LD_LIBRARY_PATH
-  #fi
 }
 
 install_prereqs_for_macos() {
@@ -116,26 +107,18 @@ install_prereqs_for_macos() {
 }
 
 install_prereqs_for_centos7() {
-  echo "we are here"
-  echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-  echo "Listing contents of /usr/local/lib..."
-  ls -l /usr/local/lib
-  echo "Listing contents of /usr/local/lib64..."
-  ls -l /usr/local/lib64
-  echo "Listing DONE"
   yum install -y -q which wget git &&
     yum install -y -q autoconf automake libtool unzip &&
     yum install -y -q cmake3 patch &&
     yum install -y -q perl perl-IPC-Cmd
-    #yum install -y -q libuuid libuuid-devel &&
-    #yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
-    echo "we are here2"
     install_openssl3
     install_curl
     install_uuid
   elif [[ ! -d ~/catch2-install ]]; then
     INSTALL_DIR=~/catch2-install CATCH2_VER=v$CATCH2_VER $GITHUB_WORKSPACE/.github/scripts/install_catch2.sh
+    yum install -y -q libuuid libuuid-devel &&
+    yum install -y -q curl libcurl-devel
   fi
 }
 
