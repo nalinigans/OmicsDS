@@ -178,7 +178,6 @@ if [[ $1 == "release" ]]; then
     pushd build &&
     cmake .. -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX -DBUILD_DISTRIBUTABLE_LIBRARY=True &&
     make -j4 && rm -fr dependencies/TileDB && make -j4 &&
-    echo "Running nm on libomicsds.so" && nm src/main/libomicsds.so | grep BIO_f &&
     $SUDO make install &&
     popd
 fi
