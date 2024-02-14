@@ -118,10 +118,15 @@ install_prereqs_for_macos() {
 install_prereqs_for_centos7() {
   echo "we are here"
   echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+  echo "Listing contents of /usr/local/lib..."
+  ls -l /usr/local/lib
+  echo "Listing contents of /usr/local/lib64..."
+  ls -l /usr/local/lib64
+  echo "Listing DONE"
   yum install -y -q which wget git &&
     yum install -y -q autoconf automake libtool unzip &&
     yum install -y -q cmake3 patch &&
-    yum install -y -q perl perl-IPC-Cmd &&
+    yum install -y -q perl perl-IPC-Cmd
     #yum install -y -q libuuid libuuid-devel &&
     #yum install -y -q curl libcurl-devel
   if [[ $1 == "release" ]]; then
@@ -189,7 +194,8 @@ if [[ $1 == "release" ]]; then
   mkdir build &&
     pushd build &&
     cmake .. -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX -DBUILD_DISTRIBUTABLE_LIBRARY=True &&
-    make -j4 &&
+    make -j4 && rm -fr dependencies/TileDB && make -j4 &&
+    echo "Running nm on libomicsds.so" && nm src/main/libomicsds.so | grep BIO_f &&
     $SUDO make install &&
     popd
 fi
