@@ -12,7 +12,7 @@ jobs:
     name: Documentation build
     runs-on: ${{ inputs.runner }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build docs
       run: |
         sudo apt-get update -qq

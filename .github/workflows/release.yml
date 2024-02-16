@@ -1,0 +1,103 @@
+#
+# release.yml
+#
+# The MIT License
+#
+# Copyright (c) 2024 dātma, inc™
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+name: Publish Wheels
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-12]
+    runs-on: ${{ matrix.os }}
+    env:
+       INSTALL_PREFIX: ${{ github.workspace }}/prereqs
+       MACOSX_DEPLOYMENT_TARGET: 12.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version number
+        run: |
+            VERSION_NUMBER=${GITHUB_REF_NAME:1}
+            if [[ ${VERSION_NUMBER} == *"test"* ]]; then
+                VERSION_NUMBER=${VERSION_NUMBER%.*}
+            fi
+            echo VERSION_NUMBER=${VERSION_NUMBER} >> $GITHUB_ENV
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.5
+        env:
+          CIBW_ARCHS: "x86_64"
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_BEFORE_ALL: "INSTALL_PREFIX=${{ env.INSTALL_PREFIX }} .github/scripts/install_prereqs.sh release"
+          CIBW_BEFORE_BUILD: "pip install -r {package}/requirements/dev.txt && cd {package}"
+          CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
+          CIBW_SKIP: "*musllinux*"
+          CIBW_CONFIG_SETTINGS: "--build-option=--with-version=${{ env.VERSION_NUMBER }} --build-option=--cythonize"
+          CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH=${{ env.INSTALL_PREFIX }}
+          CIBW_ENVIRONMENT_MACOS: DYLD_LIBRARY_PATH=${{ env.INSTALL_PREFIX }}/lib
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: wheelhouse/*.whl
+
+  publish_wheels:
+    name: Publish wheels
+    needs: build_wheels
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - name: Publish
+        run: |
+          echo "Contents of dist dir: "
+          ls -l dist
+          VERSION_NUMBER=${GITHUB_REF_NAME:1}
+          if [[ ${VERSION_NUMBER} != *"test"* ]]; then
+            #aws cli is pre-installed in ubuntu VMs
+            which aws
+            pip install twine
+            aws codeartifact login --tool twine --repository ODA-dev --domain oda-dev --domain-owner 037083108678
+            twine upload --verbose --repository codeartifact dist/*
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}

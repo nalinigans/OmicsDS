@@ -92,11 +92,11 @@ target_link_libraries(omicsds_shared
 # Install libraries
 install(
   TARGETS omicsds_static omicsds_shared
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 
 #install include files
 install(
-  FILES ${OMICSDS_API_INCLUDE} ${EXPORTS_HEADER} DESTINATION include/omicsds
+  FILES ${OMICSDS_API_INCLUDE} ${EXPORTS_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omicsds
   )

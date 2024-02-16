@@ -26,7 +26,9 @@
 #
 
 cmake_minimum_required(VERSION 3.6)
+
 project(OmicsDS)
+cmake_minimum_required(VERSION 3.6)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -40,7 +42,7 @@ set(SPDLOG_INCLUDE_DIR  "${CMAKE_SOURCE_DIR}/dependencies/spdlog/include" CACHE 
 
 # Protobuf library
 set(OMICSDS_PROTOBUF_VERSION "3.21.7" CACHE STRING "Version of Google Protocol Buffer library")
-set(PROTOBUF_ROOT_DIR "$ENV{HOME}/protobuf-install/${OMICSDS_PROTOBUF_VERSION}" CACHE PATH "Path to installed protobuf")
+set(PROTOBUF_ROOT_DIR "$ENV{HOME}/protobuf-install" CACHE PATH "Path to installed protobuf")
 set(PROTOBUF_URL "https://github.com/protocolbuffers/protobuf/archive/v${OMICSDS_PROTOBUF_VERSION}.zip" CACHE STRING "URL to protobuf github release")
 
 # GIT_COMMIT_HASH derived from git tag to be used as part of OMICSDS_VERSION
@@ -55,14 +57,28 @@ execute_process(
 set(OMICSDS_RELEASE_VERSION "0.0.1-SNAPSHOT" CACHE STRING "OmicsDS release version")
 set(OMICSDS_VERSION "${OMICSDS_RELEASE_VERSION}-${GIT_COMMIT_HASH}" CACHE STRING "OmicsDS full version string")
 
+option(BUILD_DISTRIBUTABLE_LIBRARY "Build the OmicsDS library with minimal runtime dependencies")
+
 if(APPLE)
   set(DISABLE_OPENMP True CACHE BOOL "Disable OpenMP")
 else()
   set(DISABLE_OPENMP False CACHE BOOL "Disable OpenMP")
 endif()
 
+option(DISABLE_TOOLS "Disable build of tools")
+option(DISABLE_TESTS "Disable testing")
+option(DISABLE_BINDINGS "Disable build/test of bindings")
+
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
+endif()
+
+if(BUILD_DISTRIBUTABLE_LIBRARY)
+  set(OPENSSL_USE_STATIC_LIBS TRUE)
+  set(DISABLE_OPENMP TRUE)
+  set(DISABLE_TOOLS TRUE)
+  set(DISABLE_TESTS TRUE)
+  set(DISABLE_BINDINGS TRUE)
 endif()
 
 set(HTSLIB_INSTALL_DIR "" CACHE PATH "Path to htslib install directory")
@@ -116,7 +132,11 @@ endif()
 
 # Honor visibility properties for all target types.
 # https://www.cmake.org/cmake/help/latest/policy/CMP0063.html
-#cmake_policy(SET CMP0063 NEW)
+if(POLICY CMP0063)
+  cmake_policy(SET CMP0063 NEW)
+endif()
+
+include(GNUInstallDirs)
 
 # Collect profiling stats to use with gperf/pprof
 # To install gperftools - sudo yum -y install gperftools - Centos 7
@@ -168,16 +188,20 @@ find_package(ProtobufWrapper REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 # Catch2
-include(SetCatch2Version)
+if(NOT DISABLE_TESTS)
+  include(SetCatch2Version)
+endif()
 
 set(OMICSDS_DEPENDENCIES
   ${HTSLIB_LIBRARY}
   tiledb_static
   ${OPENSSL_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${LIBUUID_LIBRARY}
-  ${PROTOBUF_LIBRARIES}
-  -ldl
+  ${CURL_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_DL_LIBS}
 )
 
 set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -gdwarf-3")
@@ -187,14 +211,20 @@ set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG -g3 -gdwarf-3 --coverage")
 include_directories(src/loader)
 
 # Build and Test OmicsDS
-enable_testing()
+if(NOT DISABLE_TESTS)
+  enable_testing()
+endif()
 add_subdirectory(src)
 
 # Build tools
-add_subdirectory(tools)
+if(NOT DISABLE_TOOLS)
+  add_subdirectory(tools)
+endif()
 
 # Bindings
-add_subdirectory(bindings)
+if(NOT DISABLE_BINDINGS)
+  add_subdirectory(bindings)
+endif()
 
 # Docs
 if (DEFINED BUILD_DOCS)

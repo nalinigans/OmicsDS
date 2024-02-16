@@ -112,12 +112,13 @@ void TileDBArrayStorage::initialize(bool write_mode, std::shared_ptr<OmicsSchema
         };
 
         std::vector<int32_t> compression_vec(omicsds_schema->attributes.size() + 1,
-                                             TILEDB_NO_COMPRESSION);  // +1 for coordinates
+                                             TILEDB_GZIP);  // +1 for coordinates
         const int* compression = compression_vec.data();
+	compression_vec[compression_vec.size()-1] = compression_vec[compression_vec.size()-1] | TILEDB_DELTA_ENCODE; // Use delta encode for coordinates
 
         // TODO : Should get offset compression from protobuf configuration
         std::vector<int32_t> offsets_compression_vec(omicsds_schema->attributes.size(),
-                                                     TILEDB_NO_COMPRESSION);
+                                                     TILEDB_ZSTD+TILEDB_DELTA_ENCODE);
         const int* offsets_compression = offsets_compression_vec.data();
 
         // Set array schema
