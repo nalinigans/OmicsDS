@@ -63,6 +63,7 @@ python -m venv .env
 source .env/bin/activate
 make omicsds_python
 ```
+omicsds wheels for MacOS and Linux for x86\_64 architectures are regularly published to `AWS CodeArtifact`. See [Installing from AWS CodeArtifact](bindings/python/scripts/install_from_aws_codeartifact.sh).
 
 # Usage
 ## Library
