@@ -37,7 +37,16 @@ cimport numpy as np
 
 np.import_array()
 
+from enum import Enum
+
+import orjson
 import pandas as pd
+
+
+class OutputMode(Enum):
+    PANDAS = 0,
+    JSON_BY_SAMPLE = 1,
+    JSON_BY_FEATURE = 2
 
 
 def version() -> str:
@@ -55,23 +64,37 @@ def disconnect(handle: int) -> None:
 def query_features(
     handle: int,
     features: Optional[list[str]] = None,
-    sample_range: Optional[tuple[int, int]] = None
-) -> pd.DataFrame:
+    sample_range: Optional[tuple[int, int]] = None,
+    output_mode: Optional[OutputMode] = OutputMode.PANDAS
+):
     cdef vector[string] feature_results
     cdef vector[uint64_t] sample_results
     cdef vector[float] score_results
-    processor = new OmicsDSProcessor(&feature_results, &sample_results, &score_results)
     if features is None:
         features = []
     else:
         features = [f.encode(encoding="ascii") for f in features]
     if sample_range is None:
         sample_range = (0, INT64_MAX)
-    OmicsDS.query_features(handle, features, sample_range, processor[0])
+    OmicsDS.query_features(handle, features, sample_range,
+                           OmicsDSProcessor(&feature_results, &sample_results, &score_results))
 
     cdef np.ndarray results = np.array(score_results, dtype=np.single, copy=False)
+    decoded_features = [feature.decode(encoding="ascii") for feature in feature_results]
     results = results.reshape((len(feature_results), len(sample_results)))
 
-    decoded_features = [feature.decode(encoding="ascii") for feature in feature_results]
-
-    return pd.DataFrame(data=results, index=decoded_features, columns=sample_results)
+    if output_mode is OutputMode.PANDAS:
+        return pd.DataFrame(data=results, index=decoded_features, columns=sample_results)
+    elif output_mode is OutputMode.JSON_BY_SAMPLE:
+        data = {'samples': sample_results}
+        for index in range(len(results)):
+            data[decoded_features[index]] = results[index]
+        return orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY).decode()
+    elif output_mode is OutputMode.JSON_BY_FEATURE:
+        data = {'features': decoded_features}
+        results = np.ascontiguousarray(results.T)
+        for index in range(len(results)):
+            data[str(sample_results[index])] = results[index]
+        return orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY).decode()
+    else:
+        return None

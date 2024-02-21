@@ -29,6 +29,8 @@ import pytest
 import pandas as pd
 import numpy as np
 import omicsds.api
+import os, sys
+import orjson
 
 
 def test_connect(omicsds_handle):
@@ -45,6 +47,18 @@ def test_restricted_query(omicsds_handle):
     assert (expected_df.index == df.index).all()
     assert (expected_df.columns == df.columns).all()
 
+    json = omicsds.api.query_features(
+        omicsds_handle, features, (0, 2), output_mode=omicsds.api.OutputMode.JSON_BY_SAMPLE
+    )
+    expected_json = '{"samples":[0,1,2],"ENSG00000138190":[1488.0,177.0,405.0],"ENSG00000243485":[828.0,153.0,2301.0]}'
+    assert json == expected_json
+
+    json = omicsds.api.query_features(
+        omicsds_handle, features, (0, 2), output_mode=omicsds.api.OutputMode.JSON_BY_FEATURE
+    )
+    expected_json = '{"features":["ENSG00000138190","ENSG00000243485"],"0":[1488.0,828.0],"1":[177.0,153.0],"2":[405.0,2301.0]}'
+    assert json == expected_json
+
 
 def test_full_query(omicsds_handle):
     features = ["ENSG00000138190", "ENSG00000243485"]
@@ -52,6 +66,23 @@ def test_full_query(omicsds_handle):
     assert (df.index == features).all()
     assert (df.columns == range(304)).all()
     assert df[10]["ENSG00000138190"] == 0.0
+
+    INPUTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inputs")
+    json = omicsds.api.query_features(
+        omicsds_handle, output_mode=omicsds.api.OutputMode.JSON_BY_SAMPLE
+    )
+    with open(os.path.join(INPUTS_DIR, "omicsds_output_by_sample.json"), "r") as j:
+        expected_json = j.read()
+    assert len(json) == len(expected_json)
+    assert json == expected_json
+
+    json = omicsds.api.query_features(
+        omicsds_handle, output_mode=omicsds.api.OutputMode.JSON_BY_FEATURE
+    )
+    with open(os.path.join(INPUTS_DIR, "omicsds_output_by_feature.json"), "r") as j:
+        expected_json = j.read()
+    assert len(json) == len(expected_json)
+    assert json == expected_json
 
 
 def test_no_workspace():

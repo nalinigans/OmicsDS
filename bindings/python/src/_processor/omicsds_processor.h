@@ -31,6 +31,7 @@ class OmicsDSProcessor {
  public:
   OmicsDSProcessor(std::vector<std::string>* features, std::vector<uint64_t>* samples,
                    std::vector<float>* scores);
+  // Functor - makes class OmicsDSProcessor behave like a function
   void operator()(const std::string& feature_id, uint64_t sample_id, float score);
 
  private:

@@ -36,6 +36,7 @@ from setuptools import setup, Extension, find_packages
 OMICSDS_INSTALL_PATH = os.getenv("OMICSDS_HOME", default="/usr/local")
 WITH_VERSION = "0.0.1"
 USE_CYTHON = False
+RESOLVE_RPATH = False
 EXT = "cpp"
 
 # Scan environment and arg list to determine if we should cythonize or not
@@ -51,13 +52,31 @@ for arg in sys.argv[:]:
         USE_CYTHON = True
         EXT = "pyx"
         sys.argv.remove(arg)
+    if arg.find("--inplace") == 0:
+        RESOLVE_RPATH = True
+        sys.argv.remove(arg)
 
 print(f"Using {OMICSDS_INSTALL_PATH} for OmicsDS library.")
 
 OMICSDS_INCLUDE_DIR = os.path.join(OMICSDS_INSTALL_PATH, "include/omicsds")
-OMICSDS_LIB_DIR = os.path.join(OMICSDS_INSTALL_PATH, "lib")
-# Linux installations could be in lib64 too
-OMICSDS_LIB64_DIR = os.path.join(OMICSDS_INSTALL_PATH, "lib64")
+
+
+def get_lib_dirs():
+    lib_dirs = []
+    if os.path.exists(os.path.join(OMICSDS_INSTALL_PATH, "lib")):
+        lib_dirs.append(os.path.join(OMICSDS_INSTALL_PATH, "lib"))
+    if os.path.exists(os.path.join(OMICSDS_INSTALL_PATH, "lib64")):
+        lib_dirs.append(os.path.join(OMICSDS_INSTALL_PATH, "lib64"))
+    return lib_dirs
+
+
+def get_link_args():
+    if RESOLVE_RPATH and sys.platform == "darwin":
+        print(f"Building inplace...")
+        return ["-Wl,-rpath," + os.path.join(OMICSDS_INSTALL_PATH, "lib")]
+    else:
+        return []
+
 
 EXTENSIONS = {
     "api": {
@@ -71,13 +90,11 @@ EXTENSIONS = {
         "libraries": [
             "omicsds",
         ],
-        "library_dirs": [
-            OMICSDS_LIB_DIR,
-            OMICSDS_LIB64_DIR,
-        ],
+        "library_dirs": get_lib_dirs(),
         "extra_compile_args": [
             "-std=c++17",
         ],
+        "extra_link_args": get_link_args(),
     }
 }
 
