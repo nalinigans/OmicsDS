@@ -29,6 +29,8 @@
 
 from libc.stdint cimport int64_t, uint8_t, uint64_t
 from libcpp.functional cimport function
+from libcpp.unordered_map cimport unordered_map
+from libcpp.memory cimport shared_ptr
 from libcpp.pair cimport pair
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -36,7 +38,8 @@ from libcpp.vector cimport vector
 
 cdef extern from "omicsds_processor.h":
     cdef cppclass OmicsDSProcessor:
-        OmicsDSProcessor(vector[string]* features, vector[uint64_t]* samples, vector[float]* scores)
+        OmicsDSProcessor(vector[string]* features, vector[string]* samples, vector[float]* scores, string sample_map)
+        OmicsDSProcessor(vector[string]* features, vector[string]* samples, vector[float]* scores)
 
 
 cdef extern from "omicsds.h":
@@ -56,3 +59,5 @@ cdef extern from "omicsds.h":
         void query_features(OmicsDSHandle handle, vector[string]& features,
                              pair[int64_t, int64_t]& sample_range,
                              OmicsDSProcessor proc) except +
+
+        pass

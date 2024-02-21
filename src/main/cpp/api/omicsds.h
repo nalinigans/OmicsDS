@@ -87,7 +87,6 @@ class OMICSDS_EXPORT OmicsDS {
   static void query_features(OmicsDSHandle handle, std::vector<std::string>& features,
                              std::array<int64_t, 2>& sample_range,
                              feature_process_fn_t proc = NULL);
-
   /**
    * Query a given handle, processing the results.
    *
@@ -100,4 +99,9 @@ class OMICSDS_EXPORT OmicsDS {
   static void query_features(OmicsDSHandle handle, std::vector<std::string>& features,
                              std::pair<int64_t, int64_t>& sample_range,
                              feature_process_fn_t proc = NULL);
+  /**
+   * Resolves a sample index(TileDB coordinate) in OmicsDS to its name from the given sample map
+   */
+  static std::shared_ptr<std::unordered_map<size_t, std::string>> resolve_sample_map(
+      std::string_view sample_map);
 };

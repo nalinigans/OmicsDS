@@ -65,10 +65,11 @@ def query_features(
     handle: int,
     features: Optional[list[str]] = None,
     sample_range: Optional[tuple[int, int]] = None,
+    sample_map: Optional[str] = None,
     output_mode: Optional[OutputMode] = OutputMode.PANDAS
 ):
     cdef vector[string] feature_results
-    cdef vector[uint64_t] sample_results
+    cdef vector[string] sample_results
     cdef vector[float] score_results
     if features is None:
         features = []
@@ -76,17 +77,23 @@ def query_features(
         features = [f.encode(encoding="ascii") for f in features]
     if sample_range is None:
         sample_range = (0, INT64_MAX)
-    OmicsDS.query_features(handle, features, sample_range,
-                           OmicsDSProcessor(&feature_results, &sample_results, &score_results))
+
+    if sample_map is None:
+        OmicsDS.query_features(handle, features, sample_range,
+                               OmicsDSProcessor(&feature_results, &sample_results, &score_results))
+    else:
+        OmicsDS.query_features(handle, features, sample_range,
+                               OmicsDSProcessor(&feature_results, &sample_results, &score_results, sample_map.encode(encoding="ascii")))
 
     cdef np.ndarray results = np.array(score_results, dtype=np.single, copy=False)
     decoded_features = [feature.decode(encoding="ascii") for feature in feature_results]
+    decoded_samples = [sample.decode(encoding="ascii") for sample in sample_results]
     results = results.reshape((len(feature_results), len(sample_results)))
 
     if output_mode is OutputMode.PANDAS:
-        return pd.DataFrame(data=results, index=decoded_features, columns=sample_results)
+        return pd.DataFrame(data=results, index=decoded_features, columns=decoded_samples)
     elif output_mode is OutputMode.JSON_BY_SAMPLE:
-        data = {'samples': sample_results}
+        data = {'samples': decoded_samples}
         for index in range(len(results)):
             data[decoded_features[index]] = results[index]
         return orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY).decode()
@@ -94,7 +101,7 @@ def query_features(
         data = {'features': decoded_features}
         results = np.ascontiguousarray(results.T)
         for index in range(len(results)):
-            data[str(sample_results[index])] = results[index]
+            data[decoded_samples[index]] = results[index]
         return orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY).decode()
     else:
         return None

@@ -29,6 +29,7 @@
 #include "omicsds_encoder.h"
 #include "omicsds_export.h"
 #include "omicsds_logger.h"
+#include "omicsds_samplemap.h"
 
 #include <map>
 #include <mutex>
@@ -109,4 +110,9 @@ void OmicsDS::query_features(OmicsDSHandle handle, std::vector<std::string>& fea
                              std::pair<int64_t, int64_t>& sample_range, feature_process_fn_t proc) {
   std::array<int64_t, 2> sample_range_array = {sample_range.first, sample_range.second};
   OmicsDS::query_features(handle, features, sample_range_array, proc);
+}
+
+std::shared_ptr<std::unordered_map<size_t, std::string>> OmicsDS::resolve_sample_map(
+    std::string_view sample_map) {
+  return SampleMap(sample_map.data()).invert_sample_map(true);
 }
