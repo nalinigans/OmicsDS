@@ -7,8 +7,10 @@
  * Unauthorized copying of this file by any medium is strictly prohibited.
  */
 
+#include <memory>
 #include <stdint.h>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
