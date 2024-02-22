@@ -50,12 +50,15 @@ jobs:
       run: |
         system("echo RENV_PATHS_ROOT=${RENV_PATHS_ROOT}")
         system("ls ${RENV_PATHS_ROOT}")
+        system("echo Listing RENV_PATHS_ROOT DONE")
         system("sudo apt-get install -y libcurl4-openssl-dev")
         install.packages(c("remotes", "rcmdcheck"))
         remotes::install_deps("bindings/r", dependencies = TRUE)
+        system("echo Install R dependencies DONE")
       env:
         R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
 
     - name: R CMD Check
       shell: Rscript {0}
+      run: check --no-manual --no-build-vignettes --no-vignettes  --install-args="--configure-args='--with-omicsds=${OMICSDS_HOME}'" omicsds_0.0.1.tar.gz 
       run: rcmdcheck::rcmdcheck("bindings/r", args=c("--no-manual", "--ignore-vignettes"), build_args="--no-build-vignettes", error_on = "error")

@@ -34,8 +34,8 @@ add_dependencies(omicsds_r omicsds_static)
 set(R_LIBS "~/R-libs" CACHE STRING "Directory to install R libraries in")
 
 add_custom_target(omicsds_r_install
-  COMMAND R -e \"install.packages('remotes', lib = '${R_LIBS}')\"
-  COMMAND R -e \"library(remotes, lib.loc= '${R_LIBS}')\; remotes::install_local('${CMAKE_CURRENT_SOURCE_DIR}', lib = '${R_LIBS}', dependencies = TRUE, configure.args = '--with-omicsds=${CMAKE_INSTALL_PREFIX}')\"
+  COMMAND R -e \"install.packages('remotes', lib = '${R_LIBS}', repos = 'http://cran.us.r-project.org')\"
+  COMMAND R -e \"library(remotes, lib.loc= '${R_LIBS}')\; remotes::install_local('${CMAKE_CURRENT_SOURCE_DIR}', lib = '${R_LIBS}', dependencies = TRUE, force = TRUE, configure.args = '--with-omicsds=${CMAKE_INSTALL_PREFIX}')\"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 add_dependencies(omicsds_r_install omicsds_r omicsds_library_install)
