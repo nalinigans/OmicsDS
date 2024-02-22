@@ -60,4 +60,9 @@ jobs:
 
     - name: R CMD Check
       shell: Rscript {0}
-      run: rcmdcheck::rcmdcheck("bindings/r", args=c("--no-manual", "--ignore-vignettes"), build_args="--no-build-vignettes", error_on = "error")
+      run: |
+        rcmdcheck::rcmdcheck("bindings/r", args=c("--no-manual", "--ignore-vignettes"), build_args="--no-build-vignettes", error_on = "error")
+
+    - name: Check for errors
+      if: always()
+      run: find /tmp -name "*install.out" -exec cat {}\;
