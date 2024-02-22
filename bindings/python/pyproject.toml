@@ -9,3 +9,5 @@ line-length = 100
 profile = "black"
 line_length = 100
 
+[tool.cython-lint]
+max-line-length = 100

@@ -83,7 +83,8 @@ def query_features(
                                OmicsDSProcessor(&feature_results, &sample_results, &score_results))
     else:
         OmicsDS.query_features(handle, features, sample_range,
-                               OmicsDSProcessor(&feature_results, &sample_results, &score_results, sample_map.encode(encoding="ascii")))
+                               OmicsDSProcessor(&feature_results, &sample_results, &score_results,
+                                                sample_map.encode(encoding="ascii")))
 
     cdef np.ndarray results = np.array(score_results, dtype=np.single, copy=False)
     decoded_features = [feature.decode(encoding="ascii") for feature in feature_results]
