@@ -60,5 +60,4 @@ jobs:
 
     - name: R CMD Check
       shell: Rscript {0}
-      run: check --no-manual --no-build-vignettes --no-vignettes  --install-args="--configure-args='--with-omicsds=${OMICSDS_HOME}'" omicsds_0.0.1.tar.gz 
       run: rcmdcheck::rcmdcheck("bindings/r", args=c("--no-manual", "--ignore-vignettes"), build_args="--no-build-vignettes", error_on = "error")
