@@ -117,6 +117,12 @@ jobs:
     - name: Build
       working-directory: ${{env.CMAKE_BUILD_DIR}}
       run: |
+        if [[ -d ~/R-libs ]]; then
+          echo "Found R-libs"
+        else
+          echo "NOT found R-libs. Creating one."
+          mkdir ~/R-libs
+        fi
         source $GITHUB_WORKSPACE/.github/scripts/install_prereqs.sh
         echo OPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
