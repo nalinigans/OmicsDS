@@ -111,6 +111,9 @@ jobs:
         git lfs pull
         mkdir -p $CMAKE_BUILD_DIR
 
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+
     - name: Build
       working-directory: ${{env.CMAKE_BUILD_DIR}}
       run: |
@@ -122,7 +125,8 @@ jobs:
                                 -DCMAKE_PREFIX_PATH=~/catch2-install
         make -j4
         cmake --build . --target test --parallel 4 || $GITHUB_WORKSPACE/.github/scripts/print_test_log.sh
-                                make install
+        make install
+        make omicsds_r_install
 
     - name: Tar Install Artifacts
       working-directory: ${{github.workspace}}
