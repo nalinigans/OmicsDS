@@ -29,8 +29,8 @@ fi
 RBIN="${R_HOME}/bin/R"
 
 CPPFLAGS=`"${RBIN}" CMD config CPPFLAGS`
-CXX11STD=`"${RBIN}" CMD config CXX11STD`
-CXXFLAGS=`"${RBIN}" CMD config CXX11FLAGS`
+CXX17STD=`"${RBIN}" CMD config CXX17STD`
+CXXFLAGS=`"${RBIN}" CMD config CXX17FLAGS`
 
 AC_LANG(C++)
 AC_REQUIRE_CPP
@@ -66,7 +66,7 @@ AC_CHECK_FILES([${OMICSDS_INSTALL_PATH}/include/omicsds/omicsds.h],
                [AC_MSG_ERROR([OmicsDS include files not found])])
 
 # Try compiling with Omicsds headers
-CPPFLAGS="${CPPFLAGS} ${CXX11STD} ${CXXFLAGS} -I${OMICSDS_INSTALL_PATH}/include"
+CPPFLAGS="${CPPFLAGS} ${CXX17STD} ${CXXFLAGS} -I${OMICSDS_INSTALL_PATH}/include"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <omicsds/omicsds.h>]], [[]])],[],[AC_MSG_ERROR([unable to compile with omicds/omicsds.h])])
 
 # Check Omicsds installation
